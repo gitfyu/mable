@@ -1,12 +1,16 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"github.com/gitfyu/mable/internal/mable"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"net"
 	"os"
+	"os/signal"
 	"path"
+	"syscall"
 )
 
 func notExist(file string) bool {
@@ -43,4 +47,22 @@ func main() {
 		log.Fatal().Err(err).Msg("Failed to load config")
 	}
 
+	srv := &mable.Server{}
+
+	go func() {
+		ch := make(chan os.Signal, 1)
+		signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+
+		<-ch
+		log.Info().Msg("Shutting down")
+		srv.Close()
+	}()
+
+	log.Info().Msgf("Listening on %s", cfg.Address)
+
+	if err := srv.ListenAndServe(cfg); !errors.Is(err, net.ErrClosed) {
+		log.Fatal().Err(err).Msg("Server execution failed")
+	}
+
+	log.Info().Msg("Goodbye")
 }
