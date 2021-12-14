@@ -2,9 +2,11 @@ package main
 
 import (
 	"flag"
+	"github.com/gitfyu/mable/internal/mable"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"os"
+	"path"
 )
 
 func notExist(file string) bool {
@@ -31,4 +33,14 @@ func main() {
 			log.Fatal().Err(err).Msg("Could not create data directory")
 		}
 	}
+
+	cfgFile := path.Join(dataDir, "config.toml")
+	cfg := mable.DefaultConfig()
+
+	if notExist(cfgFile) {
+		log.Warn().Msg("No config file found, using default config")
+	} else if err := mable.LoadConfig(cfgFile, cfg); err != nil {
+		log.Fatal().Err(err).Msg("Failed to load config")
+	}
+
 }
