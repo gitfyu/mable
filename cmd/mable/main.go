@@ -7,6 +7,11 @@ import (
 	"os"
 )
 
+func notExist(file string) bool {
+	_, err := os.Stat(file)
+	return os.IsNotExist(err)
+}
+
 func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout})
 
@@ -19,10 +24,10 @@ func main() {
 		os.Exit(-1)
 	}
 
-	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
+	if notExist(dataDir) {
 		log.Info().Str("path", dataDir).Msg("Data directory does not exist, creating it now")
 
-		if err := os.MkdirAll(dataDir, os.ModeDir|0600); err != nil {
+		if err := os.MkdirAll(dataDir, 0755); err != nil {
 			log.Fatal().Err(err).Msg("Could not create data directory")
 		}
 	}
