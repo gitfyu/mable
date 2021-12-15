@@ -111,3 +111,24 @@ func (d *Decoder) ReadString(s *string) bool {
 	*s = string(buf)
 	return true
 }
+
+func (d *Decoder) ReadByte(v *byte) bool {
+	b, err := d.Reader.ReadByte()
+	if err != nil {
+		d.err = err
+		return false
+	}
+
+	*v = b
+	return true
+}
+
+func (d *Decoder) ReadUnsignedShort(v *uint16) bool {
+	var b1, b2 byte
+	if !d.ReadByte(&b1) || !d.ReadByte(&b2) {
+		return false
+	}
+
+	*v = uint16(b1)<<8 | uint16(b2)
+	return true
+}
