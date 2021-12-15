@@ -16,13 +16,12 @@ type Decoder struct {
 	err    error
 }
 
-// LastError returns the error that occurred during a previous call to a Decoder function. If the last operation was
-// successful, this function will return nil.
+// LastError returns the error that occurred during a previous call to a Decoder function
 func (d *Decoder) LastError() error {
 	return d.err
 }
 
-// ReadVarInt reads a single VarInt. If the operation fails, false is returned and LastError will be ErrVarIntTooBig.
+// ReadVarInt reads a single VarInt. If the result is too big, LastError will be ErrVarIntTooBig.
 func (d *Decoder) ReadVarInt(v *VarInt) bool {
 	var size int32
 	var b byte
@@ -48,7 +47,7 @@ func (d *Decoder) ReadVarInt(v *VarInt) bool {
 	return true
 }
 
-// ReadVarLong reads a single VarLong. If the operation fails, false is returned and LastError will be ErrVarLongTooBig.
+// ReadVarLong reads a single VarLong. If the result is too big, LastError will be ErrVarLongTooBig.
 func (d *Decoder) ReadVarLong(v *VarLong) bool {
 	var size int32
 	var b byte
@@ -74,7 +73,7 @@ func (d *Decoder) ReadVarLong(v *VarLong) bool {
 	return true
 }
 
-// ReadString reads a single string. If the operation fails, false is returned and LastError will be ErrStringTooBig.
+// ReadString reads a single string. LastError will report ErrStringNegLen or ErrStringTooBig for illegal inputs.
 func (d *Decoder) ReadString(s *string) bool {
 	var size VarInt
 	if !d.ReadVarInt(&size) {
