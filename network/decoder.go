@@ -30,7 +30,20 @@ func (d *Decoder) ReadVarInt(v *VarInt) bool {
 // ReadVarIntAndSize reads a single VarInt. n will be set to the number of bytes read, unless it is set to nil.
 // If the result is too big, LastError will be ErrVarIntTooBig.
 func (d *Decoder) ReadVarIntAndSize(v *VarInt, n *int) bool {
-	var size int
+	var tmp VarLong
+	ok := d.readVarLong(&tmp, varIntMaxBytes, n)
+
+	*v = VarInt(tmp)
+	return ok
+}
+
+// ReadVarLong reads a single VarLong. If the result is too big, LastError will be ErrVarLongTooBig.
+func (d *Decoder) ReadVarLong(v *VarLong) bool {
+	return d.readVarLong(v, varLongMaxBytes, nil)
+}
+
+func (d *Decoder) readVarLong(v *VarLong, maxSize int, size *int) bool {
+	var n int
 	var b byte
 
 	for {
@@ -39,9 +52,9 @@ func (d *Decoder) ReadVarIntAndSize(v *VarInt, n *int) bool {
 			return false
 		}
 
-		*v |= VarInt(b&0x7F) << (size * 7)
-		size++
-		if size > varIntMaxBytes {
+		*v |= VarLong(b&0x7F) << (n * 7)
+		n++
+		if n > maxSize {
 			d.err = ErrVarIntTooBig
 			return false
 		}
@@ -51,34 +64,8 @@ func (d *Decoder) ReadVarIntAndSize(v *VarInt, n *int) bool {
 		}
 	}
 
-	if n != nil {
-		*n = size
-	}
-
-	return true
-}
-
-// ReadVarLong reads a single VarLong. If the result is too big, LastError will be ErrVarLongTooBig.
-func (d *Decoder) ReadVarLong(v *VarLong) bool {
-	var size int32
-	var b byte
-
-	for {
-		b, d.err = d.Reader.ReadByte()
-		if d.err != nil {
-			return false
-		}
-
-		*v |= VarLong(b&0x7F) << (size * 7)
-		size++
-		if size > varLongMaxBytes {
-			d.err = ErrVarLongTooBig
-			return false
-		}
-
-		if (b & 0x80) == 0 {
-			break
-		}
+	if size != nil {
+		*size = n
 	}
 
 	return true

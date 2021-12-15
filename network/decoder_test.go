@@ -108,8 +108,8 @@ func TestDecoder_ReadVarLong_TooBig(t *testing.T) {
 	decoder := decoderFromBytes(varLongBytesTooBig)
 	var v VarLong
 
-	if decoder.ReadVarLong(&v) || decoder.LastError() != ErrVarLongTooBig {
-		t.Error("Expected ErrVarLongTooBig")
+	if decoder.ReadVarLong(&v) || decoder.LastError() != ErrVarIntTooBig {
+		t.Error("Expected ErrVarIntTooBig")
 	}
 }
 

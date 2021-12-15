@@ -13,10 +13,9 @@ const (
 	// TODO: ensure that this limit is high enough to not cause issues with legitimate clients
 	stringMaxBytes = 1024
 
-	ErrVarIntTooBig  = Error("VarInt too big")
-	ErrVarLongTooBig = Error("VarLong too big")
-	ErrStringNegLen  = Error("String has negative length")
-	ErrStringTooBig  = Error("String too big")
+	ErrVarIntTooBig = Error("VarInt too big")
+	ErrStringNegLen = Error("String has negative length")
+	ErrStringTooBig = Error("String too big")
 )
 
 func (e Error) Error() string {
