@@ -32,20 +32,29 @@ var varIntBytes = []byte{
 	0x80, 0x80, 0x80, 0x80, 0x08,
 }
 
+var varIntSizes = []int{
+	1, 1, 1, 1, 2, 2, 3, 3, 5, 5, 5,
+}
+
 var varIntBytesTooBig = []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0x0f}
 
-func TestDecoder_ReadVarInt_Valid(t *testing.T) {
+func TestDecoder_ReadVarIntAndSize_Valid(t *testing.T) {
 	decoder := decoderFromBytes(varIntBytes)
 
-	for _, v := range varInts {
+	for i, v := range varInts {
 		var result VarInt
+		var size int
 
-		if !decoder.ReadVarInt(&result) {
+		if !decoder.ReadVarIntAndSize(&result, &size) {
 			t.Error(decoder.LastError())
 		}
 
 		if result != v {
-			t.Errorf("Expected %d, got %d", v, result)
+			t.Errorf("Expected value %d, got %d", v, result)
+		}
+
+		if size != varIntSizes[i] {
+			t.Errorf("Expected size %d, got %d", varIntSizes[i], size)
 		}
 	}
 }
