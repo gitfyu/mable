@@ -64,7 +64,7 @@ func main() {
 		srv.Close()
 	}()
 
-	if err := srv.ListenAndServe(cfg); !errors.Is(err, net.ErrClosed) {
+	if err := srv.ListenAndServe(); !errors.Is(err, net.ErrClosed) {
 		log.Fatal().Err(err).Msg("Server execution failed")
 	}
 

@@ -5,31 +5,46 @@ import (
 	"io"
 )
 
-// Decoder is a wrapper around bufio.Reader used to decode common data types in the Minecraft protocol. Its functions
-// all return a bool instead of an error to allow easy chaining of several calls, for example:
+// PacketDecoder is a wrapper around bufio.Reader used to decode common data types in the Minecraft protocol. Its
+// functions all return a bool instead of an error to allow easy chaining of several calls, for example:
 //
-// ok := d.ReadVarIntAndSize(&v1) && d.ReadVarIntAndSize(&v2) && d.ReadVarIntAndSize(v3)
+// ok := d.ReadVarIntAndSize(&v1) && d.ReadVarIntAndSize(&v2) && d.ReadVarIntAndSize(&v3)
 //
 // If !ok, you can obtain the error using LastError.
-type Decoder struct {
-	Reader *bufio.Reader
+type PacketDecoder struct {
+	reader *bufio.Reader
 	err    error
 }
 
-// LastError returns the error that occurred during a previous call to a Decoder function. If the previous operation was
-// successful, the return value is undefined.
-func (d *Decoder) LastError() error {
+func NewPacketDecoder(r *bufio.Reader) *PacketDecoder {
+	return &PacketDecoder{
+		reader: r,
+	}
+}
+
+// LastError returns the error that occurred during a previous call to a PacketDecoder function. If the previous
+// operation was successful, the return value is undefined.
+func (d *PacketDecoder) LastError() error {
 	return d.err
 }
 
+func (d *PacketDecoder) Skip(n int) bool {
+	if _, err := d.reader.Discard(n); err != nil {
+		d.err = err
+		return false
+	}
+
+	return true
+}
+
 // ReadVarInt is the same as ReadVarIntAndSize, except it does not return the size.
-func (d *Decoder) ReadVarInt(v *VarInt) bool {
+func (d *PacketDecoder) ReadVarInt(v *VarInt) bool {
 	return d.ReadVarIntAndSize(v, nil)
 }
 
 // ReadVarIntAndSize reads a single VarInt. n will be set to the number of bytes read, unless it is set to nil.
 // If the result is too big, LastError will be ErrVarIntTooBig.
-func (d *Decoder) ReadVarIntAndSize(v *VarInt, n *int) bool {
+func (d *PacketDecoder) ReadVarIntAndSize(v *VarInt, n *int) bool {
 	var tmp VarLong
 	ok := d.readVarLong(&tmp, varIntMaxBytes, n)
 
@@ -38,16 +53,16 @@ func (d *Decoder) ReadVarIntAndSize(v *VarInt, n *int) bool {
 }
 
 // ReadVarLong reads a single VarLong. If the result is too big, LastError will be ErrVarIntTooBig.
-func (d *Decoder) ReadVarLong(v *VarLong) bool {
+func (d *PacketDecoder) ReadVarLong(v *VarLong) bool {
 	return d.readVarLong(v, varLongMaxBytes, nil)
 }
 
-func (d *Decoder) readVarLong(v *VarLong, maxSize int, size *int) bool {
+func (d *PacketDecoder) readVarLong(v *VarLong, maxSize int, size *int) bool {
 	var n int
 	var b byte
 
 	for {
-		b, d.err = d.Reader.ReadByte()
+		b, d.err = d.reader.ReadByte()
 		if d.err != nil {
 			return false
 		}
@@ -72,7 +87,7 @@ func (d *Decoder) readVarLong(v *VarLong, maxSize int, size *int) bool {
 }
 
 // ReadString reads a single string. LastError will report ErrStringNegLen or ErrStringTooBig for illegal inputs.
-func (d *Decoder) ReadString(s *string) bool {
+func (d *PacketDecoder) ReadString(s *string) bool {
 	var size VarInt
 	if !d.ReadVarInt(&size) {
 		return false
@@ -90,7 +105,7 @@ func (d *Decoder) ReadString(s *string) bool {
 	}
 
 	buf := make([]byte, size)
-	if _, err := io.ReadFull(d.Reader, buf); err != nil {
+	if _, err := io.ReadFull(d.reader, buf); err != nil {
 		d.err = err
 		return false
 	}
@@ -99,8 +114,8 @@ func (d *Decoder) ReadString(s *string) bool {
 	return true
 }
 
-func (d *Decoder) ReadByte(v *byte) bool {
-	b, err := d.Reader.ReadByte()
+func (d *PacketDecoder) ReadByte(v *byte) bool {
+	b, err := d.reader.ReadByte()
 	if err != nil {
 		d.err = err
 		return false
@@ -110,7 +125,7 @@ func (d *Decoder) ReadByte(v *byte) bool {
 	return true
 }
 
-func (d *Decoder) ReadUnsignedShort(v *uint16) bool {
+func (d *PacketDecoder) ReadUnsignedShort(v *uint16) bool {
 	var b1, b2 byte
 	if !d.ReadByte(&b1) || !d.ReadByte(&b2) {
 		return false

@@ -7,10 +7,8 @@ import (
 	"testing"
 )
 
-func decoderFromBytes(b []byte) *Decoder {
-	return &Decoder{
-		Reader: bufio.NewReader(bytes.NewReader(b)),
-	}
+func decoderFromBytes(b []byte) *PacketDecoder {
+	return NewPacketDecoder(bufio.NewReader(bytes.NewReader(b)))
 }
 
 type varLongTestCase struct {

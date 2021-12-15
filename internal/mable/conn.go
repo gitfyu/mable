@@ -21,16 +21,16 @@ var stateToPacketHandlers = [][]packetHandler{
 
 type connHandler struct {
 	conn  net.Conn
-	dec   *network.Decoder
+	dec   *network.PacketDecoder
+	enc   *network.PacketEncoder
 	state protocol.State
 }
 
 func newConnHandler(c net.Conn) *connHandler {
 	return &connHandler{
-		conn: c,
-		dec: &network.Decoder{
-			Reader: bufio.NewReader(c),
-		},
+		conn:  c,
+		dec:   network.NewPacketDecoder(bufio.NewReader(c)),
+		enc:   network.NewPacketEncoder(bufio.NewWriter(c)),
 		state: protocol.StateHandshake,
 	}
 }
@@ -48,8 +48,8 @@ func (h *connHandler) handle() error {
 
 		if !h.validId(id) {
 			// Since a lot of packets will probably never be implemented, unknown packets are simply ignored
-			if _, err := h.dec.Reader.Discard(bodySize); err != nil {
-				return err
+			if !h.dec.Skip(bodySize) {
+				return h.dec.LastError()
 			}
 			continue
 		}
