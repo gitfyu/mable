@@ -47,7 +47,13 @@ func main() {
 		log.Fatal().Err(err).Msg("Failed to load config")
 	}
 
-	srv := &mable.Server{}
+	srv, err := mable.NewServer(cfg)
+
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to start server")
+	}
+
+	log.Info().Msgf("Listening on %s", srv.Addr().String())
 
 	go func() {
 		ch := make(chan os.Signal, 1)
@@ -57,8 +63,6 @@ func main() {
 		log.Info().Msg("Shutting down")
 		srv.Close()
 	}()
-
-	log.Info().Msgf("Listening on %s", cfg.Address)
 
 	if err := srv.ListenAndServe(cfg); !errors.Is(err, net.ErrClosed) {
 		log.Fatal().Err(err).Msg("Server execution failed")
