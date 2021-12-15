@@ -16,7 +16,8 @@ type Decoder struct {
 	err    error
 }
 
-// LastError returns the error that occurred during a previous call to a Decoder function
+// LastError returns the error that occurred during a previous call to a Decoder function. If the previous operation was
+// successful, the return value is undefined.
 func (d *Decoder) LastError() error {
 	return d.err
 }
