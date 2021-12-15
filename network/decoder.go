@@ -37,7 +37,7 @@ func (d *Decoder) ReadVarIntAndSize(v *VarInt, n *int) bool {
 	return ok
 }
 
-// ReadVarLong reads a single VarLong. If the result is too big, LastError will be ErrVarLongTooBig.
+// ReadVarLong reads a single VarLong. If the result is too big, LastError will be ErrVarIntTooBig.
 func (d *Decoder) ReadVarLong(v *VarLong) bool {
 	return d.readVarLong(v, varLongMaxBytes, nil)
 }
