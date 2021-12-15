@@ -1,6 +1,9 @@
 package network
 
-import "bufio"
+import (
+	"bufio"
+	"io"
+)
 
 // Decoder is a wrapper around bufio.Reader used to decode common data types in the Minecraft protocol. Its functions
 // all return a bool instead of an error to allow easy chaining of several calls, for example:
@@ -68,5 +71,33 @@ func (d *Decoder) ReadVarLong(v *VarLong) bool {
 		}
 	}
 
+	return true
+}
+
+// ReadString reads a single string. If the operation fails, false is returned and LastError will be ErrStringTooBig.
+func (d *Decoder) ReadString(s *string) bool {
+	var size VarInt
+	if !d.ReadVarInt(&size) {
+		return false
+	}
+
+	if size < 0 {
+		d.err = ErrStringNegLen
+		return false
+	} else if size == 0 {
+		*s = ""
+		return true
+	} else if size > stringMaxBytes {
+		d.err = ErrStringTooBig
+		return false
+	}
+
+	buf := make([]byte, size)
+	if _, err := io.ReadFull(d.Reader, buf); err != nil {
+		d.err = err
+		return false
+	}
+
+	*s = string(buf)
 	return true
 }

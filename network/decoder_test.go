@@ -103,3 +103,35 @@ func TestDecoder_ReadVarLong_TooBig(t *testing.T) {
 		t.Error("Expected ErrVarLongTooBig")
 	}
 }
+
+func TestDecoder_ReadString_Valid(t *testing.T) {
+	// TODO obtain more test cases
+	decoder := decoderFromBytes([]byte{0x05, 0x6D, 0x61, 0x62, 0x6C, 0x65})
+	var s string
+
+	if !decoder.ReadString(&s) {
+		t.Error(decoder.LastError())
+	}
+
+	if s != "mable" {
+		t.Errorf("Expected 'mable', got '%s'", s)
+	}
+}
+
+func TestDecoder_ReadString_TooBig(t *testing.T) {
+	decoder := decoderFromBytes([]byte{0xff, 0xff, 0xff, 0xff, 0x07, 0x6D, 0x61, 0x62, 0x6C, 0x65})
+	var s string
+
+	if decoder.ReadString(&s) || decoder.LastError() != ErrStringTooBig {
+		t.Errorf("Expected ErrStringTooBig, got %s", decoder.LastError())
+	}
+}
+
+func TestDecoder_ReadString_NegLen(t *testing.T) {
+	decoder := decoderFromBytes([]byte{0xff, 0xff, 0xff, 0xff, 0x0f, 0x6D, 0x61, 0x62, 0x6C, 0x65})
+	var s string
+
+	if decoder.ReadString(&s) || decoder.LastError() != ErrStringNegLen {
+		t.Errorf("Expected ErrStringNegLen, got %s", decoder.LastError())
+	}
+}
