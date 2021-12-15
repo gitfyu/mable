@@ -52,8 +52,7 @@ func (d *Decoder) ReadVarIntAndSize(v *VarInt, n *int) bool {
 	}
 
 	if n != nil {
-		// The loop above always increments the size one too many times, so subtract 1
-		*n = size - 1
+		*n = size
 	}
 
 	return true
