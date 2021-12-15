@@ -3,6 +3,7 @@ package network
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"testing"
 )
 
@@ -12,104 +13,74 @@ func decoderFromBytes(b []byte) *Decoder {
 	}
 }
 
-// Test cases are obtained from https://wiki.vg/Protocol#VarInt_and_VarLong
-
-var varInts = []VarInt{
-	0, 1, 2, 127, 128, 255, 25565, 2097151, 2147483647, -1, -2147483648,
+type varLongTestCase struct {
+	valid bool
+	long  bool
+	val   VarLong
+	bytes []byte
 }
 
-var varIntBytes = []byte{
-	0x00,
-	0x01,
-	0x02,
-	0x7f,
-	0x80, 0x01,
-	0xff, 0x01,
-	0xdd, 0xc7, 0x01,
-	0xff, 0xff, 0x7f,
-	0xff, 0xff, 0xff, 0xff, 0x07,
-	0xff, 0xff, 0xff, 0xff, 0x0f,
-	0x80, 0x80, 0x80, 0x80, 0x08,
+// Obtained from https://wiki.vg/Protocol#VarInt_and_VarLong
+var varLongTestCases = []varLongTestCase{
+	// VarInts
+	{val: 0, bytes: []byte{0x00}},
+	{val: 1, bytes: []byte{0x01}},
+	{val: 2, bytes: []byte{0x02}},
+	{val: 127, bytes: []byte{0x7f}},
+	{val: 128, bytes: []byte{0x80, 0x01}},
+	{val: 255, bytes: []byte{0xff, 0x01}},
+	{val: 25565, bytes: []byte{0xdd, 0xc7, 0x01}},
+	{val: 2097151, bytes: []byte{0xff, 0xff, 0x7f}},
+	{val: 2147483647, bytes: []byte{0xff, 0xff, 0xff, 0xff, 0x07}},
+	{val: -1, bytes: []byte{0xff, 0xff, 0xff, 0xff, 0x0f}},
+	{val: -2147483648, bytes: []byte{0x80, 0x80, 0x80, 0x80, 0x08}},
+	// val is unused for this case
+	{valid: false, val: 0, bytes: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f}},
+
+	// VarLongs
+	{long: true, val: 9223372036854775807, bytes: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f}},
+	{long: true, val: -1, bytes: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01}},
+	{long: true, val: -2147483648, bytes: []byte{0x80, 0x80, 0x80, 0x80, 0xf8, 0xff, 0xff, 0xff, 0xff, 0x01}},
+	{long: true, val: -9223372036854775808, bytes: []byte{0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x01}},
+	// val is unused for this case
+	{valid: false, long: true, val: 0, bytes: []byte{0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x01}},
 }
 
-var varIntSizes = []int{
-	1, 1, 1, 1, 2, 2, 3, 3, 5, 5, 5,
-}
+func TestDecoder_readVarLong(t *testing.T) {
+	for _, c := range varLongTestCases {
+		t.Run(fmt.Sprintf("%v", c), func(t *testing.T) {
+			dec := decoderFromBytes(c.bytes)
+			maxSize := varIntMaxBytes
 
-var varIntBytesTooBig = []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0x0f}
+			if c.long {
+				maxSize = varLongMaxBytes
+			}
 
-func TestDecoder_ReadVarIntAndSize_Valid(t *testing.T) {
-	decoder := decoderFromBytes(varIntBytes)
+			var v VarLong
+			var n int
 
-	for i, v := range varInts {
-		var result VarInt
-		var size int
+			if !dec.readVarLong(&v, maxSize, &n) {
+				if !c.valid {
+					return
+				}
 
-		if !decoder.ReadVarIntAndSize(&result, &size) {
-			t.Error(decoder.LastError())
-		}
+				t.Error(dec.LastError())
+			}
 
-		if result != v {
-			t.Errorf("Expected value %d, got %d", v, result)
-		}
+			if c.long {
+				if c.val != v {
+					t.Errorf("Expected value %d, got %d", c.val, v)
+				}
+			} else {
+				if VarInt(c.val) != VarInt(v) {
+					t.Errorf("Expected value %d, got %d", c.val, v)
+				}
+			}
 
-		if size != varIntSizes[i] {
-			t.Errorf("Expected size %d, got %d", varIntSizes[i], size)
-		}
-	}
-}
-
-func TestDecoder_ReadVarInt_TooBig(t *testing.T) {
-	decoder := decoderFromBytes(varIntBytesTooBig)
-	var v VarInt
-
-	if decoder.ReadVarInt(&v) || decoder.LastError() != ErrVarIntTooBig {
-		t.Error("Expected ErrVarIntTooBig")
-	}
-}
-
-var varLongs = []VarLong{
-	0, 1, 2, 127, 128, 255, 2147483647, 9223372036854775807, -1, -2147483648, -9223372036854775808,
-}
-
-var varLongBytes = []byte{
-	0x00,
-	0x01,
-	0x02,
-	0x7f,
-	0x80, 0x01,
-	0xff, 0x01,
-	0xff, 0xff, 0xff, 0xff, 0x07,
-	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f,
-	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01,
-	0x80, 0x80, 0x80, 0x80, 0xf8, 0xff, 0xff, 0xff, 0xff, 0x01,
-	0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x01,
-}
-
-var varLongBytesTooBig = []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01}
-
-func TestDecoder_ReadVarLong_Valid(t *testing.T) {
-	decoder := decoderFromBytes(varLongBytes)
-
-	for _, v := range varLongs {
-		var result VarLong
-
-		if !decoder.ReadVarLong(&result) {
-			t.Error(decoder.LastError())
-		}
-
-		if result != v {
-			t.Errorf("Expected %d, got %d", v, result)
-		}
-	}
-}
-
-func TestDecoder_ReadVarLong_TooBig(t *testing.T) {
-	decoder := decoderFromBytes(varLongBytesTooBig)
-	var v VarLong
-
-	if decoder.ReadVarLong(&v) || decoder.LastError() != ErrVarIntTooBig {
-		t.Error("Expected ErrVarIntTooBig")
+			if len(c.bytes) != n {
+				t.Errorf("Expected size %d, got %d", len(c.bytes), n)
+			}
+		})
 	}
 }
 
