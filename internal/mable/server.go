@@ -1,6 +1,7 @@
 package mable
 
 import (
+	"github.com/rs/zerolog/log"
 	"net"
 )
 
@@ -25,8 +26,8 @@ func (s *Server) Addr() net.Addr {
 	return s.listener.Addr()
 }
 
-// ListenAndServe will run the Server using the provided Config
-func (s *Server) ListenAndServe(cfg *Config) error {
+// ListenAndServe will run the Server
+func (s *Server) ListenAndServe() error {
 	for {
 		c, err := s.listener.Accept()
 		if err != nil {
@@ -38,10 +39,16 @@ func (s *Server) ListenAndServe(cfg *Config) error {
 }
 
 func (s *Server) handleConn(c net.Conn) {
-	defer c.Close()
+	h := newConnHandler(c)
+	defer h.Close()
 
-	// TODO
-	c.Write([]byte("test"))
+	if err := h.handle(); err != nil {
+		log.Debug().
+			Err(err).
+			Stack().
+			Str("src", c.RemoteAddr().String()).
+			Msg("Connection error")
+	}
 }
 
 // Close stops the server
