@@ -8,7 +8,7 @@ import (
 // Decoder is a wrapper around bufio.Reader used to decode common data types in the Minecraft protocol. Its functions
 // all return a bool instead of an error to allow easy chaining of several calls, for example:
 //
-// ok := d.ReadVarInt(&v1) && d.ReadVarInt(&v2) && d.ReadVarInt(v3)
+// ok := d.ReadVarIntAndSize(&v1) && d.ReadVarIntAndSize(&v2) && d.ReadVarIntAndSize(v3)
 //
 // If !ok, you can obtain the error using LastError.
 type Decoder struct {
@@ -22,9 +22,15 @@ func (d *Decoder) LastError() error {
 	return d.err
 }
 
-// ReadVarInt reads a single VarInt. If the result is too big, LastError will be ErrVarIntTooBig.
+// ReadVarInt is the same as ReadVarIntAndSize, except it does not return the size.
 func (d *Decoder) ReadVarInt(v *VarInt) bool {
-	var size int32
+	return d.ReadVarIntAndSize(v, nil)
+}
+
+// ReadVarIntAndSize reads a single VarInt. n will be set to the number of bytes read, unless it is set to nil.
+// If the result is too big, LastError will be ErrVarIntTooBig.
+func (d *Decoder) ReadVarIntAndSize(v *VarInt, n *int) bool {
+	var size int
 	var b byte
 
 	for {
@@ -43,6 +49,11 @@ func (d *Decoder) ReadVarInt(v *VarInt) bool {
 		if (b & 0x80) == 0 {
 			break
 		}
+	}
+
+	if n != nil {
+		// The loop above always increments the size one too many times, so subtract 1
+		*n = size - 1
 	}
 
 	return true
