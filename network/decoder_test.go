@@ -14,9 +14,13 @@ func decoderFromBytes(b []byte) *Decoder {
 }
 
 type varLongTestCase struct {
-	valid bool
-	long  bool
-	val   VarLong
+	// whether the test is supposed to fail
+	invalid bool
+	// whether this is a VarInt or VarLong
+	long bool
+	// the value
+	val VarLong
+	// the encoded value
 	bytes []byte
 }
 
@@ -35,7 +39,7 @@ var varLongTestCases = []varLongTestCase{
 	{val: -1, bytes: []byte{0xff, 0xff, 0xff, 0xff, 0x0f}},
 	{val: -2147483648, bytes: []byte{0x80, 0x80, 0x80, 0x80, 0x08}},
 	// val is unused for this case
-	{valid: false, val: 0, bytes: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f}},
+	{invalid: true, val: 0, bytes: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f}},
 
 	// VarLongs
 	{long: true, val: 9223372036854775807, bytes: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f}},
@@ -43,7 +47,7 @@ var varLongTestCases = []varLongTestCase{
 	{long: true, val: -2147483648, bytes: []byte{0x80, 0x80, 0x80, 0x80, 0xf8, 0xff, 0xff, 0xff, 0xff, 0x01}},
 	{long: true, val: -9223372036854775808, bytes: []byte{0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x01}},
 	// val is unused for this case
-	{valid: false, long: true, val: 0, bytes: []byte{0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x01}},
+	{invalid: true, long: true, val: 0, bytes: []byte{0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x01}},
 }
 
 func TestDecoder_readVarLong(t *testing.T) {
@@ -60,11 +64,15 @@ func TestDecoder_readVarLong(t *testing.T) {
 			var n int
 
 			if !dec.readVarLong(&v, maxSize, &n) {
-				if !c.valid {
+				if c.invalid {
 					return
 				}
 
 				t.Error(dec.LastError())
+			}
+
+			if c.invalid {
+				t.Error("Expected error")
 			}
 
 			if c.long {
