@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io"
 	"testing"
 )
 
@@ -62,7 +63,7 @@ var varLongInvalidTest = varIntTest{
 func Test_ReadVarInt(t *testing.T) {
 	for _, test := range varIntTests {
 		t.Run(fmt.Sprintf("%v", test), func(t *testing.T) {
-			testRead(t, func(r ByteReader, v *VarLong) error {
+			testRead(t, func(r io.ByteReader, v *VarLong) error {
 				var tmp VarInt
 				err := ReadVarInt(r, &tmp)
 				*v = VarLong(tmp)
@@ -83,7 +84,7 @@ func Test_ReadVarInt_Invalid(t *testing.T) {
 func Test_ReadVarLong(t *testing.T) {
 	for _, test := range varLongTests {
 		t.Run(fmt.Sprintf("%v", test), func(t *testing.T) {
-			testRead(t, func(r ByteReader, v *VarLong) error {
+			testRead(t, func(r io.ByteReader, v *VarLong) error {
 				return ReadVarLong(r, v)
 			}, test.bytes, test.val)
 		})
@@ -101,7 +102,7 @@ func Test_ReadVarLong_Invalid(t *testing.T) {
 func Test_WriteVarInt(t *testing.T) {
 	for _, test := range varIntTests {
 		t.Run(fmt.Sprintf("%v", test), func(t *testing.T) {
-			testWrite(t, func(w ByteWriter) error {
+			testWrite(t, func(w io.ByteWriter) error {
 				return WriteVarInt(w, test.val)
 			}, test.bytes)
 		})
@@ -111,7 +112,7 @@ func Test_WriteVarInt(t *testing.T) {
 func Test_WriteVarLong(t *testing.T) {
 	for _, test := range varLongTests {
 		t.Run(fmt.Sprintf("%v", test), func(t *testing.T) {
-			testWrite(t, func(w ByteWriter) error {
+			testWrite(t, func(w io.ByteWriter) error {
 				return WriteVarLong(w, test.val)
 			}, test.bytes)
 		})
@@ -138,7 +139,7 @@ func Test_VarLongSize(t *testing.T) {
 	}
 }
 
-func testRead(t *testing.T, readFunc func(ByteReader, *VarLong) error, b []byte, expectVal VarLong) {
+func testRead(t *testing.T, readFunc func(io.ByteReader, *VarLong) error, b []byte, expectVal VarLong) {
 	r := bufio.NewReader(bytes.NewReader(b))
 	var val VarLong
 
@@ -150,7 +151,7 @@ func testRead(t *testing.T, readFunc func(ByteReader, *VarLong) error, b []byte,
 	}
 }
 
-func testWrite(t *testing.T, writeFunc func(ByteWriter) error, expect []byte) {
+func testWrite(t *testing.T, writeFunc func(io.ByteWriter) error, expect []byte) {
 	var buf bytes.Buffer
 	w := bufio.NewWriter(&buf)
 	if err := writeFunc(w); err != nil {

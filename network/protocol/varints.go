@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"errors"
+	"io"
 	"math/bits"
 )
 
@@ -22,14 +23,6 @@ var (
 // Implementation is based on https://wiki.vg/Protocol#VarInt_and_VarLong and
 // https://github.com/Tnze/go-mc/blob/master/net/packet/types.go
 
-type ByteReader interface {
-	ReadByte() (byte, error)
-}
-
-type ByteWriter interface {
-	WriteByte(byte) error
-}
-
 // VarIntSize returns the number of bytes required to write for the given value
 func VarIntSize(v VarInt) int {
 	return (31-bits.LeadingZeros32(uint32(v)))/7 + 1
@@ -41,7 +34,7 @@ func VarLongSize(v VarLong) int {
 }
 
 // ReadVarInt reads a single VarInt
-func ReadVarInt(r ByteReader, v *VarInt) error {
+func ReadVarInt(r io.ByteReader, v *VarInt) error {
 	var tmp VarLong
 	err := readVarIntOrLong(r, &tmp, VarIntMaxBytes)
 
@@ -50,21 +43,21 @@ func ReadVarInt(r ByteReader, v *VarInt) error {
 }
 
 // ReadVarLong reads a single VarLong
-func ReadVarLong(r ByteReader, v *VarLong) error {
+func ReadVarLong(r io.ByteReader, v *VarLong) error {
 	return readVarIntOrLong(r, v, VarLongMaxBytes)
 }
 
 // WriteVarInt writes a single VarInt
-func WriteVarInt(w ByteWriter, v VarInt) error {
+func WriteVarInt(w io.ByteWriter, v VarInt) error {
 	return writeVarIntOrLong(w, uint64(uint32(v)))
 }
 
 // WriteVarLong writes a single VarLong
-func WriteVarLong(w ByteWriter, v VarLong) error {
+func WriteVarLong(w io.ByteWriter, v VarLong) error {
 	return writeVarIntOrLong(w, uint64(v))
 }
 
-func readVarIntOrLong(r ByteReader, v *VarLong, maxSize int) error {
+func readVarIntOrLong(r io.ByteReader, v *VarLong, maxSize int) error {
 	var n int
 
 	for {
@@ -87,7 +80,7 @@ func readVarIntOrLong(r ByteReader, v *VarLong, maxSize int) error {
 	return nil
 }
 
-func writeVarIntOrLong(w ByteWriter, v uint64) error {
+func writeVarIntOrLong(w io.ByteWriter, v uint64) error {
 	for {
 		b := v & 0x7F
 		v >>= 7
