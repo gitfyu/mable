@@ -1,18 +1,22 @@
 package mable
 
+import (
+	"github.com/gitfyu/mable/network"
+	"github.com/gitfyu/mable/network/protocol/packet"
+)
+
 const defaultResponse = `{"version":{"name":"1.7.6-1.8.9","protocol":47},"players":{"max":0,"online":0},"description":{"text":"Hello world"}}`
 
 var statusHandlers = idToPacketHandler{
 	handleStatusRequest,
 }
 
-func handleStatusRequest(_ int, h *connHandler) error {
-	ok := h.enc.WriteVarInt(0x00) &&
-		h.enc.WriteString(defaultResponse) &&
-		h.enc.WritePacket(true)
-	if !ok {
-		return h.enc.LastError()
-	}
+func handleStatusRequest(h *connHandler, _ *network.PacketData) error {
+	buf := network.AcquirePacketBuilder()
+	defer network.ReleasePacketBuilder(buf)
 
-	return nil
+	buf.Init(packet.StatusResponse).
+		PutString(defaultResponse)
+
+	return h.WritePacket(buf)
 }

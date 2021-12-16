@@ -49,22 +49,17 @@ func ReadVarInt(r io.ByteReader, v *VarInt) error {
 	return nil
 }
 
-func WriteVarInt(w io.ByteWriter, v VarInt) error {
+// WriteVarInt writes a VarInt to a byte slice. If the slice is too small, this function will panic. You can check the
+// required size using VarIntSize.
+func WriteVarInt(buf []byte, v VarInt) {
 	val := uint32(v)
-
-	for {
+	for i := 0; val != 0; i++ {
 		b := val & 0x7F
 		val >>= 7
 		if val != 0 {
 			b |= 0x80
 		}
 
-		if err := w.WriteByte(byte(b)); err != nil {
-			return err
-		}
-
-		if val == 0 {
-			return nil
-		}
+		buf[i] = byte(b)
 	}
 }

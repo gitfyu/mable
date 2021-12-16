@@ -2,6 +2,7 @@ package mable
 
 import (
 	"errors"
+	"github.com/gitfyu/mable/network"
 	"github.com/gitfyu/mable/network/protocol"
 )
 
@@ -11,20 +12,14 @@ var handshakeHandlers = idToPacketHandler{
 	handleHandshake,
 }
 
-func handleHandshake(_ int, h *connHandler) error {
-	var protoVer protocol.VarInt
-	var addr string
-	var port uint16
-	var nextState protocol.VarInt
-
-	ok := h.dec.ReadVarInt(&protoVer) &&
-		h.dec.ReadString(&addr) &&
-		h.dec.ReadUnsignedShort(&port) &&
-		h.dec.ReadVarInt(&nextState)
-
-	if !ok {
-		return h.dec.LastError()
-	}
+func handleHandshake(h *connHandler, data *network.PacketData) error {
+	// protocol version
+	_ = data.GetVarInt()
+	// address
+	_ = data.GetString()
+	// port
+	_ = data.GetUnsignedShort()
+	nextState := data.GetVarInt()
 
 	switch s := protocol.State(nextState); s {
 	// TODO support login

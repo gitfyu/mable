@@ -1,14 +1,14 @@
 package mable
 
 import (
-	"bufio"
 	"github.com/gitfyu/mable/network"
 	"github.com/gitfyu/mable/network/protocol"
+	"github.com/gitfyu/mable/network/protocol/packet"
+	"github.com/rs/zerolog/log"
 	"net"
 )
 
-// TODO the size param might not be needed
-type packetHandler func(size int, h *connHandler) error
+type packetHandler func(h *connHandler, data *network.PacketData) error
 
 // idToPacketHandler acts as a map with a packet ID as key and a packetHandler as value
 type idToPacketHandler []packetHandler
@@ -21,52 +21,67 @@ var stateToPacketHandlers = [][]packetHandler{
 
 type connHandler struct {
 	conn  net.Conn
-	dec   *network.PacketDecoder
-	enc   *network.PacketEncoder
 	state protocol.State
 }
 
 func newConnHandler(c net.Conn) *connHandler {
 	return &connHandler{
 		conn:  c,
-		dec:   network.NewPacketDecoder(bufio.NewReader(c)),
-		enc:   network.NewPacketEncoder(bufio.NewWriter(c)),
 		state: protocol.StateHandshake,
 	}
 }
 
 func (h *connHandler) handle() error {
-	var size, id protocol.VarInt
+	defer func() {
+		if r := recover(); r != nil {
+			// TODO stacktrace
+			log.Debug().Msg("panic")
+		}
+	}()
+
+	var id packet.ID
+	var buf []byte
+	var err error
+	var data network.PacketData
+
+	r := network.NewReader(h.conn, network.ReaderConfig{
+		// TODO currently this is just an arbitrarily chosen limit
+		MaxPacketSize: 2 ^ 16,
+	})
 
 	for {
-		if ok := h.dec.ReadVarInt(&size) && h.dec.ReadVarInt(&id); !ok {
-			return h.dec.LastError()
+		id, buf, err = r.ReadPacket(buf)
+		if err != nil {
+			return err
 		}
 
-		bodySize := int(size) - protocol.VarIntSize(id)
-
 		if !h.validId(id) {
-			// Since a lot of packets will probably never be implemented, unknown packets are simply ignored
-			if !h.dec.Skip(bodySize) {
-				return h.dec.LastError()
-			}
+			// Ignore unknown packets
 			continue
 		}
 
-		if err := h.handlePacket(id, bodySize); err != nil {
+		data.Load(buf)
+		if err := h.handlePacket(id, &data); err != nil {
 			return err
 		}
 	}
 }
 
-func (h *connHandler) validId(id protocol.VarInt) bool {
+func (h *connHandler) validId(id packet.ID) bool {
 	return id >= 0 && int(id) < len(stateToPacketHandlers[h.state])
 }
 
-func (h *connHandler) handlePacket(id protocol.VarInt, bodySize int) error {
-	return stateToPacketHandlers[h.state][id](bodySize, h)
+func (h *connHandler) handlePacket(id packet.ID, data *network.PacketData) error {
+	return stateToPacketHandlers[h.state][id](h, data)
 }
 
+// Close closes the connection, causing the client to be disconnected
 func (h *connHandler) Close() error {
 	return h.conn.Close()
+}
+
+// WritePacket writes a single packet to the client. This function may be called concurrently.
+func (h *connHandler) WritePacket(buf *network.PacketBuilder) error {
+	_, err := h.conn.Write(buf.ToBytes())
+	return err
 }

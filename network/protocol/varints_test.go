@@ -60,19 +60,11 @@ func Test_ReadVarInt_Invalid(t *testing.T) {
 func Test_WriteVarInt(t *testing.T) {
 	for _, test := range varIntTests {
 		t.Run(fmt.Sprintf("%v", test), func(t *testing.T) {
-			var buf bytes.Buffer
-			w := bufio.NewWriter(&buf)
-			if err := WriteVarInt(w, test.val); err != nil {
-				t.Error(err)
-			}
+			buf := make([]byte, VarIntSize(test.val))
+			WriteVarInt(buf, test.val)
 
-			if err := w.Flush(); err != nil {
-				t.Error(err)
-			}
-
-			got := buf.Bytes()
-			if !bytes.Equal(test.bytes, got) {
-				t.Errorf("Expected %d, got %d", test.bytes, got)
+			if !bytes.Equal(test.bytes, buf) {
+				t.Errorf("Expected %d, got %d", test.bytes, buf)
 			}
 		})
 	}
