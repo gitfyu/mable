@@ -1,9 +1,11 @@
 package mable
 
 import (
+	"errors"
 	"github.com/gitfyu/mable/network"
 	"github.com/gitfyu/mable/network/protocol"
 	"github.com/gitfyu/mable/network/protocol/packet"
+	"github.com/rs/zerolog/log"
 	"net"
 )
 
@@ -63,7 +65,21 @@ func (h *connHandler) validId(id packet.ID) bool {
 	return id >= 0 && int(id) < len(stateToPacketHandlers[h.state])
 }
 
-func (h *connHandler) handlePacket(id packet.ID, data *network.PacketData) error {
+func (h *connHandler) handlePacket(id packet.ID, data *network.PacketData) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			e := log.Debug().
+				Int("id", int(id)).
+				Int("state", int(h.state))
+
+			if err, ok := r.(error); ok {
+				e.Err(err)
+			}
+
+			e.Msg("Error handling packet")
+			err = errors.New("failed to handle packet")
+		}
+	}()
 	return stateToPacketHandlers[h.state][id](h, data)
 }
 

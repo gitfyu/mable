@@ -2,7 +2,6 @@ package network
 
 import (
 	"github.com/gitfyu/mable/network/protocol"
-	"github.com/pkg/errors"
 	"io"
 )
 
@@ -21,7 +20,7 @@ func (r *PacketData) Load(data []byte) {
 func (r *PacketData) GetVarInt() protocol.VarInt {
 	var v protocol.VarInt
 	if err := protocol.ReadVarInt(r, &v); err != nil {
-		panic(errors.WithStack(io.EOF))
+		panic(io.EOF)
 	}
 
 	return v
@@ -30,7 +29,7 @@ func (r *PacketData) GetVarInt() protocol.VarInt {
 func (r *PacketData) GetString() string {
 	n := int(r.GetVarInt())
 	if n < 0 || n > len(r.data) {
-		panic(errors.WithStack(io.EOF))
+		panic(io.EOF)
 	} else if n == 0 {
 		return ""
 	} else {
@@ -42,7 +41,7 @@ func (r *PacketData) GetString() string {
 
 func (r *PacketData) GetUnsignedShort() uint16 {
 	if len(r.data) < 2 {
-		panic(errors.WithStack(io.EOF))
+		panic(io.EOF)
 	}
 
 	v := uint16(r.data[0])<<8 | uint16(r.data[1])

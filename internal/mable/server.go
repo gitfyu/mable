@@ -3,6 +3,7 @@ package mable
 import (
 	"github.com/rs/zerolog/log"
 	"net"
+	"runtime/debug"
 )
 
 type Server struct {
@@ -41,11 +42,7 @@ func (s *Server) ListenAndServe() error {
 func (s *Server) handleConn(c net.Conn) {
 	defer func() {
 		if r := recover(); r != nil {
-			if err, ok := r.(error); ok {
-				log.Debug().Stack().Err(err).Msg("Panic recovered")
-			} else {
-				log.Debug().Msg("Panic recovered")
-			}
+			debug.PrintStack()
 		}
 	}()
 
