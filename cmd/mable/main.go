@@ -6,6 +6,7 @@ import (
 	"github.com/gitfyu/mable/internal/mable"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/rs/zerolog/pkgerrors"
 	"net"
 	"os"
 	"os/signal"
@@ -19,6 +20,7 @@ func notExist(file string) bool {
 }
 
 func main() {
+	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout})
 
 	var dataDir string

@@ -39,13 +39,22 @@ func (s *Server) ListenAndServe() error {
 }
 
 func (s *Server) handleConn(c net.Conn) {
+	defer func() {
+		if r := recover(); r != nil {
+			if err, ok := r.(error); ok {
+				log.Debug().Stack().Err(err).Msg("Panic recovered")
+			} else {
+				log.Debug().Msg("Panic recovered")
+			}
+		}
+	}()
+
 	h := newConnHandler(c)
 	defer h.Close()
 
 	if err := h.handle(); err != nil {
 		log.Debug().
 			Err(err).
-			Stack().
 			Str("src", c.RemoteAddr().String()).
 			Msg("Connection error")
 	}

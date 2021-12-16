@@ -4,7 +4,6 @@ import (
 	"github.com/gitfyu/mable/network"
 	"github.com/gitfyu/mable/network/protocol"
 	"github.com/gitfyu/mable/network/protocol/packet"
-	"github.com/rs/zerolog/log"
 	"net"
 )
 
@@ -32,13 +31,6 @@ func newConnHandler(c net.Conn) *connHandler {
 }
 
 func (h *connHandler) handle() error {
-	defer func() {
-		if r := recover(); r != nil {
-			// TODO stacktrace
-			log.Debug().Msg("panic")
-		}
-	}()
-
 	var id packet.ID
 	var buf []byte
 	var err error
