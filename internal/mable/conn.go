@@ -37,14 +37,13 @@ func newConnHandler(c net.Conn) *connHandler {
 
 func (h *connHandler) handle() error {
 	var size, id protocol.VarInt
-	var idSize int
 
 	for {
-		if ok := h.dec.ReadVarInt(&size) && h.dec.ReadVarIntAndSize(&id, &idSize); !ok {
+		if ok := h.dec.ReadVarInt(&size) && h.dec.ReadVarInt(&id); !ok {
 			return h.dec.LastError()
 		}
 
-		bodySize := int(size) - idSize
+		bodySize := int(size) - protocol.VarIntSize(id)
 
 		if !h.validId(id) {
 			// Since a lot of packets will probably never be implemented, unknown packets are simply ignored

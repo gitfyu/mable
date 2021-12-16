@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"errors"
+	"math/bits"
 )
 
 type (
@@ -10,8 +11,8 @@ type (
 )
 
 const (
-	varIntMaxBytes  = 5
-	varLongMaxBytes = 10
+	VarIntMaxBytes  = 5
+	VarLongMaxBytes = 10
 )
 
 var (
@@ -29,18 +30,28 @@ type ByteWriter interface {
 	WriteByte(byte) error
 }
 
-// ReadVarInt reads a single VarInt. The size parameter receives the number of bytes read, unless it is nil.
-func ReadVarInt(r ByteReader, v *VarInt, size *int) error {
+// VarIntSize returns the number of bytes required to write for the given value
+func VarIntSize(v VarInt) int {
+	return (31-bits.LeadingZeros32(uint32(v)))/7 + 1
+}
+
+// VarLongSize returns the number of bytes required to write for the given value
+func VarLongSize(v VarLong) int {
+	return (63-bits.LeadingZeros64(uint64(v)))/7 + 1
+}
+
+// ReadVarInt reads a single VarInt
+func ReadVarInt(r ByteReader, v *VarInt) error {
 	var tmp VarLong
-	err := readVarIntOrLong(r, &tmp, varIntMaxBytes, size)
+	err := readVarIntOrLong(r, &tmp, VarIntMaxBytes)
 
 	*v = VarInt(tmp)
 	return err
 }
 
-// ReadVarLong reads a single VarLong. The size parameter receives the number of bytes read, unless it is nil.
-func ReadVarLong(r ByteReader, v *VarLong, size *int) error {
-	return readVarIntOrLong(r, v, varLongMaxBytes, size)
+// ReadVarLong reads a single VarLong
+func ReadVarLong(r ByteReader, v *VarLong) error {
+	return readVarIntOrLong(r, v, VarLongMaxBytes)
 }
 
 // WriteVarInt writes a single VarInt
@@ -53,7 +64,7 @@ func WriteVarLong(w ByteWriter, v VarLong) error {
 	return writeVarIntOrLong(w, uint64(v))
 }
 
-func readVarIntOrLong(r ByteReader, v *VarLong, maxSize int, size *int) error {
+func readVarIntOrLong(r ByteReader, v *VarLong, maxSize int) error {
 	var n int
 
 	for {
@@ -71,10 +82,6 @@ func readVarIntOrLong(r ByteReader, v *VarLong, maxSize int, size *int) error {
 		if (b & 0x80) == 0 {
 			break
 		}
-	}
-
-	if size != nil {
-		*size = n
 	}
 
 	return nil

@@ -38,15 +38,9 @@ func (d *PacketDecoder) Skip(n int) bool {
 	return true
 }
 
-// ReadVarInt is the same as ReadVarIntAndSize, except it does not return the size.
+// ReadVarInt reads a single protocol.VarInt
 func (d *PacketDecoder) ReadVarInt(v *protocol.VarInt) bool {
-	return d.ReadVarIntAndSize(v, nil)
-}
-
-// ReadVarIntAndSize reads a single protocol.VarInt. n will be set to the number of bytes read, unless it is set to nil.
-// If the result is too big, LastError will be ErrVarIntTooBig.
-func (d *PacketDecoder) ReadVarIntAndSize(v *protocol.VarInt, n *int) bool {
-	if err := protocol.ReadVarInt(d.reader, v, n); err != nil {
+	if err := protocol.ReadVarInt(d.reader, v); err != nil {
 		d.err = err
 		return false
 	}
@@ -54,9 +48,9 @@ func (d *PacketDecoder) ReadVarIntAndSize(v *protocol.VarInt, n *int) bool {
 	return true
 }
 
-// ReadVarLong reads a single protocol.VarLong. If the result is too big, LastError will be ErrVarIntTooBig.
+// ReadVarLong reads a single protocol.VarLong
 func (d *PacketDecoder) ReadVarLong(v *protocol.VarLong) bool {
-	if err := protocol.ReadVarLong(d.reader, v, nil); err != nil {
+	if err := protocol.ReadVarLong(d.reader, v); err != nil {
 		d.err = err
 		return false
 	}
