@@ -36,7 +36,7 @@ func newConnHandler(c net.Conn) *connHandler {
 }
 
 func (h *connHandler) handle() error {
-	var size, id network.VarInt
+	var size, id protocol.VarInt
 	var idSize int
 
 	for {
@@ -60,11 +60,11 @@ func (h *connHandler) handle() error {
 	}
 }
 
-func (h *connHandler) validId(id network.VarInt) bool {
+func (h *connHandler) validId(id protocol.VarInt) bool {
 	return id >= 0 && int(id) < len(stateToPacketHandlers[h.state])
 }
 
-func (h *connHandler) handlePacket(id network.VarInt, bodySize int) error {
+func (h *connHandler) handlePacket(id protocol.VarInt, bodySize int) error {
 	return stateToPacketHandlers[h.state][id](bodySize, h)
 }
 

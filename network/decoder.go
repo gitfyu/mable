@@ -2,6 +2,7 @@ package network
 
 import (
 	"bufio"
+	"github.com/gitfyu/mable/network/protocol"
 	"io"
 )
 
@@ -38,49 +39,26 @@ func (d *PacketDecoder) Skip(n int) bool {
 }
 
 // ReadVarInt is the same as ReadVarIntAndSize, except it does not return the size.
-func (d *PacketDecoder) ReadVarInt(v *VarInt) bool {
+func (d *PacketDecoder) ReadVarInt(v *protocol.VarInt) bool {
 	return d.ReadVarIntAndSize(v, nil)
 }
 
-// ReadVarIntAndSize reads a single VarInt. n will be set to the number of bytes read, unless it is set to nil.
+// ReadVarIntAndSize reads a single protocol.VarInt. n will be set to the number of bytes read, unless it is set to nil.
 // If the result is too big, LastError will be ErrVarIntTooBig.
-func (d *PacketDecoder) ReadVarIntAndSize(v *VarInt, n *int) bool {
-	var tmp VarLong
-	ok := d.readVarLong(&tmp, varIntMaxBytes, n)
-
-	*v = VarInt(tmp)
-	return ok
-}
-
-// ReadVarLong reads a single VarLong. If the result is too big, LastError will be ErrVarIntTooBig.
-func (d *PacketDecoder) ReadVarLong(v *VarLong) bool {
-	return d.readVarLong(v, varLongMaxBytes, nil)
-}
-
-func (d *PacketDecoder) readVarLong(v *VarLong, maxSize int, size *int) bool {
-	var n int
-	var b byte
-
-	for {
-		b, d.err = d.reader.ReadByte()
-		if d.err != nil {
-			return false
-		}
-
-		*v |= VarLong(b&0x7F) << (n * 7)
-		n++
-		if n > maxSize {
-			d.err = ErrVarIntTooBig
-			return false
-		}
-
-		if (b & 0x80) == 0 {
-			break
-		}
+func (d *PacketDecoder) ReadVarIntAndSize(v *protocol.VarInt, n *int) bool {
+	if err := protocol.ReadVarInt(d.reader, v, n); err != nil {
+		d.err = err
+		return false
 	}
 
-	if size != nil {
-		*size = n
+	return true
+}
+
+// ReadVarLong reads a single protocol.VarLong. If the result is too big, LastError will be ErrVarIntTooBig.
+func (d *PacketDecoder) ReadVarLong(v *protocol.VarLong) bool {
+	if err := protocol.ReadVarLong(d.reader, v, nil); err != nil {
+		d.err = err
+		return false
 	}
 
 	return true
@@ -88,7 +66,7 @@ func (d *PacketDecoder) readVarLong(v *VarLong, maxSize int, size *int) bool {
 
 // ReadString reads a single string. LastError will report ErrStringNegLen or ErrStringTooBig for illegal inputs.
 func (d *PacketDecoder) ReadString(s *string) bool {
-	var size VarInt
+	var size protocol.VarInt
 	if !d.ReadVarInt(&size) {
 		return false
 	}

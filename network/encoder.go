@@ -3,7 +3,7 @@ package network
 import (
 	"bufio"
 	"bytes"
-	"io"
+	"github.com/gitfyu/mable/network/protocol"
 )
 
 // PacketEncoder is a utility for writing packets. The write functions all write to an internal buffer, which can be
@@ -17,9 +17,7 @@ import (
 type PacketEncoder struct {
 	out        *bufio.Writer
 	packetData bytes.Buffer
-	// Buffer used by writeVarLong
-	buf [varLongMaxBytes]byte
-	err error
+	err        error
 }
 
 // NewPacketEncoder creates a new PacketEncoder
@@ -35,38 +33,27 @@ func (e *PacketEncoder) LastError() error {
 	return e.err
 }
 
-// WriteVarInt writes a VarInt to the buffer
-func (e *PacketEncoder) WriteVarInt(v VarInt) bool {
-	return e.writeVarLong(VarLong(v), &e.packetData)
+// WriteVarInt writes a protocol.VarInt to the buffer
+func (e *PacketEncoder) WriteVarInt(v protocol.VarInt) bool {
+	if err := protocol.WriteVarInt(&e.packetData, v); err != nil {
+		e.err = err
+		return false
+	}
+	return true
 }
 
-func (e *PacketEncoder) writeVarLong(v VarLong, w io.Writer) bool {
-	n := 0
-	for {
-		b := v & 0x7F
-		v >>= 7
-
-		if v != 0 {
-			b |= 0x80
-		}
-
-		e.buf[n] = byte(b)
-		n++
-
-		if v == 0 {
-			if _, err := w.Write(e.buf[:n]); err != nil {
-				e.err = err
-				return false
-			}
-
-			return true
-		}
+// WriteVarLong writes a protocol.VarLong to the buffer
+func (e *PacketEncoder) WriteVarLong(v protocol.VarLong) bool {
+	if err := protocol.WriteVarLong(&e.packetData, v); err != nil {
+		e.err = err
+		return false
 	}
+	return true
 }
 
 // WriteString writes a string to the buffer and prepends the length
 func (e *PacketEncoder) WriteString(s string) bool {
-	if !e.WriteVarInt(VarInt(len(s))) {
+	if !e.WriteVarInt(protocol.VarInt(len(s))) {
 		return false
 	}
 
@@ -81,7 +68,8 @@ func (e *PacketEncoder) WriteString(s string) bool {
 // WritePacket sends the current size and contents of the buffer to the output writer, after which the buffer will be
 // reset. The flush parameter determines if the output writer should be flushed.
 func (e *PacketEncoder) WritePacket(flush bool) bool {
-	if !e.writeVarLong(VarLong(e.packetData.Len()), e.out) {
+	if err := protocol.WriteVarLong(e.out, protocol.VarLong(e.packetData.Len())); err != nil {
+		e.err = err
 		return false
 	}
 

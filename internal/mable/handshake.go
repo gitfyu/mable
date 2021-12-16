@@ -2,7 +2,6 @@ package mable
 
 import (
 	"errors"
-	"github.com/gitfyu/mable/network"
 	"github.com/gitfyu/mable/network/protocol"
 )
 
@@ -13,10 +12,10 @@ var handshakeHandlers = idToPacketHandler{
 }
 
 func handleHandshake(_ int, h *connHandler) error {
-	var protoVer network.VarInt
+	var protoVer protocol.VarInt
 	var addr string
 	var port uint16
-	var nextState network.VarInt
+	var nextState protocol.VarInt
 
 	ok := h.dec.ReadVarInt(&protoVer) &&
 		h.dec.ReadString(&addr) &&
