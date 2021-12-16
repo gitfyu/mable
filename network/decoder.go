@@ -48,16 +48,6 @@ func (d *PacketDecoder) ReadVarInt(v *protocol.VarInt) bool {
 	return true
 }
 
-// ReadVarLong reads a single protocol.VarLong
-func (d *PacketDecoder) ReadVarLong(v *protocol.VarLong) bool {
-	if err := protocol.ReadVarLong(d.reader, v); err != nil {
-		d.err = err
-		return false
-	}
-
-	return true
-}
-
 // ReadString reads a single string. LastError will report ErrStringNegLen or ErrStringTooBig for illegal inputs.
 func (d *PacketDecoder) ReadString(s *string) bool {
 	var size protocol.VarInt

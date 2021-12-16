@@ -42,15 +42,6 @@ func (e *PacketEncoder) WriteVarInt(v protocol.VarInt) bool {
 	return true
 }
 
-// WriteVarLong writes a protocol.VarLong to the buffer
-func (e *PacketEncoder) WriteVarLong(v protocol.VarLong) bool {
-	if err := protocol.WriteVarLong(&e.packetData, v); err != nil {
-		e.err = err
-		return false
-	}
-	return true
-}
-
 // WriteString writes a string to the buffer and prepends the length
 func (e *PacketEncoder) WriteString(s string) bool {
 	if !e.WriteVarInt(protocol.VarInt(len(s))) {
@@ -68,7 +59,7 @@ func (e *PacketEncoder) WriteString(s string) bool {
 // WritePacket sends the current size and contents of the buffer to the output writer, after which the buffer will be
 // reset. The flush parameter determines if the output writer should be flushed.
 func (e *PacketEncoder) WritePacket(flush bool) bool {
-	if err := protocol.WriteVarLong(e.out, protocol.VarLong(e.packetData.Len())); err != nil {
+	if err := protocol.WriteVarInt(e.out, protocol.VarInt(e.packetData.Len())); err != nil {
 		e.err = err
 		return false
 	}

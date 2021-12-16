@@ -7,13 +7,11 @@ import (
 )
 
 type (
-	VarInt  int32
-	VarLong int64
+	VarInt int32
 )
 
 const (
-	VarIntMaxBytes  = 5
-	VarLongMaxBytes = 10
+	VarIntMaxBytes = 5
 )
 
 var (
@@ -28,36 +26,7 @@ func VarIntSize(v VarInt) int {
 	return (31-bits.LeadingZeros32(uint32(v)))/7 + 1
 }
 
-// VarLongSize returns the number of bytes required to write for the given value
-func VarLongSize(v VarLong) int {
-	return (63-bits.LeadingZeros64(uint64(v)))/7 + 1
-}
-
-// ReadVarInt reads a single VarInt
 func ReadVarInt(r io.ByteReader, v *VarInt) error {
-	var tmp VarLong
-	err := readVarIntOrLong(r, &tmp, VarIntMaxBytes)
-
-	*v = VarInt(tmp)
-	return err
-}
-
-// ReadVarLong reads a single VarLong
-func ReadVarLong(r io.ByteReader, v *VarLong) error {
-	return readVarIntOrLong(r, v, VarLongMaxBytes)
-}
-
-// WriteVarInt writes a single VarInt
-func WriteVarInt(w io.ByteWriter, v VarInt) error {
-	return writeVarIntOrLong(w, uint64(uint32(v)))
-}
-
-// WriteVarLong writes a single VarLong
-func WriteVarLong(w io.ByteWriter, v VarLong) error {
-	return writeVarIntOrLong(w, uint64(v))
-}
-
-func readVarIntOrLong(r io.ByteReader, v *VarLong, maxSize int) error {
 	var n int
 
 	for {
@@ -66,9 +35,9 @@ func readVarIntOrLong(r io.ByteReader, v *VarLong, maxSize int) error {
 			return err
 		}
 
-		*v |= VarLong(b&0x7F) << (n * 7)
+		*v |= VarInt(b&0x7F) << (n * 7)
 		n++
-		if n > maxSize {
+		if n > VarIntMaxBytes {
 			return errVarIntTooBig
 		}
 
@@ -80,11 +49,13 @@ func readVarIntOrLong(r io.ByteReader, v *VarLong, maxSize int) error {
 	return nil
 }
 
-func writeVarIntOrLong(w io.ByteWriter, v uint64) error {
+func WriteVarInt(w io.ByteWriter, v VarInt) error {
+	val := uint32(v)
+
 	for {
-		b := v & 0x7F
-		v >>= 7
-		if v != 0 {
+		b := val & 0x7F
+		val >>= 7
+		if val != 0 {
 			b |= 0x80
 		}
 
@@ -92,7 +63,7 @@ func writeVarIntOrLong(w io.ByteWriter, v uint64) error {
 			return err
 		}
 
-		if v == 0 {
+		if val == 0 {
 			return nil
 		}
 	}
