@@ -7,7 +7,7 @@ import (
 
 // PacketData is a utility for decoding packets. To use it, load the raw data using Load and then use the getter
 // functions to read the values. The getter functions will panic if you try to read more data than available in the
-// buffer.
+// buffer or if the data is invalid.
 type PacketData struct {
 	data []byte
 }
