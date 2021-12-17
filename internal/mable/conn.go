@@ -9,6 +9,8 @@ import (
 	"net"
 )
 
+var errPacketHandlerPanic = errors.New("panic while handling packet")
+
 type packetHandler func(h *connHandler, data *network.PacketData) error
 
 // idToPacketHandler acts as a map with a packet ID as key and a packetHandler as value
@@ -77,7 +79,7 @@ func (h *connHandler) handlePacket(id packet.ID, data *network.PacketData) (err 
 			}
 
 			e.Msg("Error handling packet")
-			err = errors.New("failed to handle packet")
+			err = errPacketHandlerPanic
 		}
 	}()
 	return stateToPacketHandlers[h.state][id](h, data)
