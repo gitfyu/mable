@@ -23,12 +23,14 @@ var stateToPacketHandlers = [][]packetHandler{
 }
 
 type connHandler struct {
+	serv  *Server
 	conn  net.Conn
 	state protocol.State
 }
 
-func newConnHandler(c net.Conn) *connHandler {
+func newConnHandler(s *Server, c net.Conn) *connHandler {
 	return &connHandler{
+		serv:  s,
 		conn:  c,
 		state: protocol.StateHandshake,
 	}
@@ -41,8 +43,7 @@ func (h *connHandler) handle() error {
 	var data network.PacketData
 
 	r := network.NewReader(h.conn, network.ReaderConfig{
-		// TODO currently this is just an arbitrarily chosen limit
-		MaxPacketSize: 1 << 16,
+		MaxPacketSize: h.serv.cfg.MaxPacketSize,
 	})
 
 	for {

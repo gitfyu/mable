@@ -23,6 +23,10 @@ func NewServer(cfg *Config) (*Server, error) {
 	}, nil
 }
 
+func (s *Server) Config() *Config {
+	return s.cfg
+}
+
 func (s *Server) Addr() net.Addr {
 	return s.listener.Addr()
 }
@@ -46,7 +50,7 @@ func (s *Server) handleConn(c net.Conn) {
 		}
 	}()
 
-	h := newConnHandler(c)
+	h := newConnHandler(s, c)
 	defer h.Close()
 
 	if err := h.handle(); err != nil {
