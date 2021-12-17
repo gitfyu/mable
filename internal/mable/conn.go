@@ -40,7 +40,7 @@ func (h *connHandler) handle() error {
 
 	r := network.NewReader(h.conn, network.ReaderConfig{
 		// TODO currently this is just an arbitrarily chosen limit
-		MaxPacketSize: 2 ^ 16,
+		MaxPacketSize: 1 << 16,
 	})
 
 	for {
