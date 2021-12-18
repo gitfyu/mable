@@ -13,5 +13,13 @@ var loginHandlers = newPacketHandlerLookup(
 )
 
 func handleLoginStart(h *connHandler, data *network.PacketData) error {
-	return h.Disconnect(&chat.Msg{Text: "TODO", Color: chat.ColorYellow})
+	reason := chat.NewBuilder("TODO: ").
+		Bold().
+		Color(chat.ColorGold).
+		Append("not yet implemented.").
+		NotBold().
+		Color(chat.ColorYellow).
+		Build()
+
+	return h.Disconnect(reason)
 }
