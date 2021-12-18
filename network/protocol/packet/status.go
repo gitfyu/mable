@@ -4,12 +4,12 @@ package packet
 
 const (
 	StatusRequest ID = iota
-	Ping
+	StatusPing
 )
 
 // Server->Client
 
 const (
 	StatusResponse ID = iota
-	Pong
+	StatusPong
 )
