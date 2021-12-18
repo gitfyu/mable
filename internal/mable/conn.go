@@ -7,6 +7,7 @@ import (
 	"github.com/gitfyu/mable/network/protocol/packet"
 	"github.com/rs/zerolog/log"
 	"net"
+	"sync/atomic"
 )
 
 var errPacketHandlerPanic = errors.New("panic while handling packet")
@@ -26,6 +27,8 @@ type connHandler struct {
 	serv  *Server
 	conn  net.Conn
 	state protocol.State
+	// closed acts as an atomic 'boolean' for Close and IsOpen
+	closed int32
 }
 
 func newConnHandler(s *Server, c net.Conn) *connHandler {
@@ -46,7 +49,7 @@ func (h *connHandler) handle() error {
 		MaxPacketSize: h.serv.cfg.MaxPacketSize,
 	})
 
-	for {
+	for h.IsOpen() {
 		id, buf, err = r.ReadPacket(buf)
 		if err != nil {
 			return err
@@ -62,6 +65,8 @@ func (h *connHandler) handle() error {
 			return err
 		}
 	}
+
+	return nil
 }
 
 func (h *connHandler) validId(id packet.ID) bool {
@@ -86,9 +91,21 @@ func (h *connHandler) handlePacket(id packet.ID, data *network.PacketData) (err 
 	return stateToPacketHandlers[h.state][id](h, data)
 }
 
-// Close closes the connection, causing the client to be disconnected
+// Close closes the connection, causing the client to be disconnected. This function may be called concurrently. Only
+// the first call to it will actually close the connection, any further calls will simply be ignored.
 func (h *connHandler) Close() error {
+	// Documentation for net.Conn.Close doesn't seem to indicate whether it can safely be called multiple times, so
+	// this will prevent duplicate calls just in case
+	if !atomic.CompareAndSwapInt32(&h.closed, 0, 1) {
+		return nil
+	}
+
 	return h.conn.Close()
+}
+
+// IsOpen returns whether the connection is still open
+func (h *connHandler) IsOpen() bool {
+	return atomic.LoadInt32(&h.closed) == 0
 }
 
 // WritePacket writes a single packet to the client. This function may be called concurrently.

@@ -1,6 +1,7 @@
 package network
 
 import (
+	"encoding/binary"
 	"github.com/gitfyu/mable/network/protocol"
 	"io"
 )
@@ -39,14 +40,22 @@ func (r *PacketData) GetString() string {
 	}
 }
 
-func (r *PacketData) GetUnsignedShort() uint16 {
-	if len(r.data) < 2 {
+func (r *PacketData) GetBytes(n int) []byte {
+	if len(r.data) < n {
 		panic(io.EOF)
 	}
 
-	v := uint16(r.data[0])<<8 | uint16(r.data[1])
-	r.data = r.data[2:]
-	return v
+	b := r.data[:n]
+	r.data = r.data[n:]
+	return b
+}
+
+func (r *PacketData) GetUnsignedShort() uint16 {
+	return binary.BigEndian.Uint16(r.GetBytes(2))
+}
+
+func (r *PacketData) GetLong() int64 {
+	return int64(binary.BigEndian.Uint64(r.GetBytes(8)))
 }
 
 // ReadByte should not be used directly
