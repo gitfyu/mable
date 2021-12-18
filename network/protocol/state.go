@@ -1,6 +1,6 @@
 package protocol
 
-type State int
+type State uint8
 
 const (
 	StateHandshake State = iota

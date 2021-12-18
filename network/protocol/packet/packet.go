@@ -1,3 +1,3 @@
 package packet
 
-type ID int
+type ID uint8
