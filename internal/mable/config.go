@@ -11,6 +11,8 @@ type Config struct {
 	Address string `toml:"address"`
 	// MaxPacketSize is the maximum size in bytes a packet is allowed to have without being rejected
 	MaxPacketSize int `toml:"max_packet_size"`
+	// DebugLogs indicates whether debug messages should be logged
+	DebugLogs bool `toml:"debug_logs"`
 }
 
 // DefaultConfig returns a Config containing the default configuration values
@@ -19,6 +21,7 @@ func DefaultConfig() *Config {
 		Address: ":25565",
 		// TODO currently this is just an arbitrarily chosen limit
 		MaxPacketSize: 1 << 16,
+		DebugLogs:     true,
 	}
 }
 

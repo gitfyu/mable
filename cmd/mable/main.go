@@ -47,6 +47,11 @@ func main() {
 		log.Fatal().Err(err).Msg("Failed to load config")
 	}
 
+	if !cfg.DebugLogs {
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+		log.Warn().Msg("Debug logs are disabled")
+	}
+
 	srv, err := mable.NewServer(cfg)
 
 	if err != nil {
