@@ -3,9 +3,9 @@ package mable
 import (
 	"encoding/json"
 	"errors"
+	"github.com/gitfyu/mable/chat"
 	"github.com/gitfyu/mable/network"
 	"github.com/gitfyu/mable/network/protocol"
-	"github.com/gitfyu/mable/network/protocol/chat"
 	"github.com/gitfyu/mable/network/protocol/packet"
 	"github.com/rs/zerolog/log"
 	"net"
