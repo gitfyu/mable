@@ -4,13 +4,16 @@ import (
 	"errors"
 	"github.com/gitfyu/mable/network"
 	"github.com/gitfyu/mable/network/protocol"
+	"github.com/gitfyu/mable/network/protocol/packet"
 )
 
 var errInvalidState = errors.New("invalid state")
 
-var handshakeHandlers = idToPacketHandler{
-	handleHandshake,
-}
+var handshakeHandlers = newPacketHandlerLookup(
+	packetHandlers{
+		packet.Handshake: handleHandshake,
+	},
+)
 
 func handleHandshake(h *connHandler, data *network.PacketData) error {
 	// protocol version

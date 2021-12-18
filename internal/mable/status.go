@@ -8,10 +8,12 @@ import (
 // TODO implement a way to properly generate the JSON response in the future
 const defaultResponse = `{"version":{"name":"1.7.6-1.8.9","protocol":47},"players":{"max":0,"online":0},"description":{"text":"Hello world"}}`
 
-var statusHandlers = idToPacketHandler{
-	handleStatusRequest,
-	handlePing,
-}
+var statusHandlers = newPacketHandlerLookup(
+	packetHandlers{
+		packet.StatusRequest: handleStatusRequest,
+		packet.Ping:          handlePing,
+	},
+)
 
 func handleStatusRequest(h *connHandler, _ *network.PacketData) error {
 	buf := network.AcquirePacketBuilder()

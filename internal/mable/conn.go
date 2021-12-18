@@ -12,13 +12,8 @@ import (
 
 var errPacketHandlerPanic = errors.New("panic while handling packet")
 
-type packetHandler func(h *connHandler, data *network.PacketData) error
-
-// idToPacketHandler acts as a map with a packet ID as key and a packetHandler as value
-type idToPacketHandler []packetHandler
-
-// stateToPacketHandlers acts as a map with a protocol.State as key to a idToPacketHandler value
-var stateToPacketHandlers = [][]packetHandler{
+// stateToPacketHandlers acts as a map with a protocol.State as key to a packetHandlerLookup value
+var stateToPacketHandlers = []packetHandlerLookup{
 	handshakeHandlers,
 	statusHandlers,
 }
