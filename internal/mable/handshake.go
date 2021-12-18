@@ -25,8 +25,9 @@ func handleHandshake(h *connHandler, data *network.PacketData) error {
 	nextState := data.GetVarInt()
 
 	switch s := protocol.State(nextState); s {
-	// TODO support login
 	case protocol.StateStatus:
+		fallthrough
+	case protocol.StateLogin:
 		h.state = s
 	default:
 		return errInvalidState

@@ -16,6 +16,7 @@ var errPacketHandlerPanic = errors.New("panic while handling packet")
 var stateToPacketHandlers = []packetHandlerLookup{
 	handshakeHandlers,
 	statusHandlers,
+	loginHandlers,
 }
 
 type connHandler struct {
