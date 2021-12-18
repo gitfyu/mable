@@ -2,9 +2,8 @@ package mable
 
 import (
 	"errors"
-	"github.com/gitfyu/mable/network"
-	"github.com/gitfyu/mable/network/protocol"
-	"github.com/gitfyu/mable/network/protocol/packet"
+	"github.com/gitfyu/mable/protocol"
+	"github.com/gitfyu/mable/protocol/packet"
 )
 
 var errInvalidState = errors.New("invalid state")
@@ -15,14 +14,14 @@ var handshakeHandlers = newPacketHandlerLookup(
 	},
 )
 
-func handleHandshake(h *connHandler, data *network.PacketData) error {
+func handleHandshake(h *connHandler, p *packet.Packet) error {
 	// protocol version
-	h.version = protocol.Version(data.GetVarInt())
+	h.version = protocol.Version(p.GetVarInt())
 	// address
-	_ = data.GetString()
+	_ = p.GetString()
 	// port
-	_ = data.GetUnsignedShort()
-	nextState := data.GetVarInt()
+	_ = p.GetUnsignedShort()
+	nextState := p.GetVarInt()
 
 	switch s := protocol.State(nextState); s {
 	case protocol.StateStatus:

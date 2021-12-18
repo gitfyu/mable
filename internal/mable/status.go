@@ -1,8 +1,7 @@
 package mable
 
 import (
-	"github.com/gitfyu/mable/network"
-	"github.com/gitfyu/mable/network/protocol/packet"
+	"github.com/gitfyu/mable/protocol/packet"
 )
 
 // TODO implement a way to properly generate the JSON response in the future
@@ -15,9 +14,9 @@ var statusHandlers = newPacketHandlerLookup(
 	},
 )
 
-func handleStatusRequest(h *connHandler, _ *network.PacketData) error {
-	buf := network.AcquirePacketBuilder()
-	defer network.ReleasePacketBuilder(buf)
+func handleStatusRequest(h *connHandler, _ *packet.Packet) error {
+	buf := packet.AcquireBuilder()
+	defer packet.ReleaseBuilder(buf)
 
 	buf.Init(packet.StatusResponse).
 		PutString(defaultResponse)
@@ -25,11 +24,11 @@ func handleStatusRequest(h *connHandler, _ *network.PacketData) error {
 	return h.WritePacket(buf)
 }
 
-func handlePing(h *connHandler, data *network.PacketData) error {
-	time := data.GetLong()
+func handlePing(h *connHandler, p *packet.Packet) error {
+	time := p.GetLong()
 
-	buf := network.AcquirePacketBuilder()
-	defer network.ReleasePacketBuilder(buf)
+	buf := packet.AcquireBuilder()
+	defer packet.ReleaseBuilder(buf)
 
 	buf.Init(packet.StatusPong).
 		PutLong(time)

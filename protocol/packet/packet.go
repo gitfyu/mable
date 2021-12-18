@@ -1,24 +1,24 @@
-package network
+package packet
 
 import (
 	"encoding/binary"
-	"github.com/gitfyu/mable/network/protocol"
+	"github.com/gitfyu/mable/protocol"
 	"io"
 )
 
-// PacketData is a utility for decoding packets. To use it, load the raw data using Load and then use the getter
+// Packet is a utility for decoding packets. To use it, load the raw data using Load and then use the getter
 // functions to read the values. The getter functions will panic if you try to read more data than available in the
 // buffer or if the data is invalid.
-type PacketData struct {
+type Packet struct {
 	data []byte
 }
 
-// Load initializes the PacketData with new data
-func (r *PacketData) Load(data []byte) {
+// Load initializes the Packet with new data
+func (r *Packet) Load(data []byte) {
 	r.data = data
 }
 
-func (r *PacketData) GetVarInt() protocol.VarInt {
+func (r *Packet) GetVarInt() protocol.VarInt {
 	var v protocol.VarInt
 	if err := protocol.ReadVarInt(r, &v); err != nil {
 		panic(io.EOF)
@@ -27,7 +27,7 @@ func (r *PacketData) GetVarInt() protocol.VarInt {
 	return v
 }
 
-func (r *PacketData) GetString() string {
+func (r *Packet) GetString() string {
 	n := int(r.GetVarInt())
 	if n < 0 || n > len(r.data) {
 		panic(io.EOF)
@@ -40,7 +40,7 @@ func (r *PacketData) GetString() string {
 	}
 }
 
-func (r *PacketData) GetBytes(n int) []byte {
+func (r *Packet) GetBytes(n int) []byte {
 	if len(r.data) < n {
 		panic(io.EOF)
 	}
@@ -50,16 +50,16 @@ func (r *PacketData) GetBytes(n int) []byte {
 	return b
 }
 
-func (r *PacketData) GetUnsignedShort() uint16 {
+func (r *Packet) GetUnsignedShort() uint16 {
 	return binary.BigEndian.Uint16(r.GetBytes(2))
 }
 
-func (r *PacketData) GetLong() int64 {
+func (r *Packet) GetLong() int64 {
 	return int64(binary.BigEndian.Uint64(r.GetBytes(8)))
 }
 
 // ReadByte should not be used directly
-func (r *PacketData) ReadByte() (byte, error) {
+func (r *Packet) ReadByte() (byte, error) {
 	if len(r.data) == 0 {
 		return 0, io.EOF
 	}

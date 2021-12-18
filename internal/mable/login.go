@@ -2,8 +2,7 @@ package mable
 
 import (
 	"github.com/gitfyu/mable/chat"
-	"github.com/gitfyu/mable/network"
-	"github.com/gitfyu/mable/network/protocol/packet"
+	"github.com/gitfyu/mable/protocol/packet"
 )
 
 var loginHandlers = newPacketHandlerLookup(
@@ -12,7 +11,7 @@ var loginHandlers = newPacketHandlerLookup(
 	},
 )
 
-func handleLoginStart(h *connHandler, data *network.PacketData) error {
+func handleLoginStart(h *connHandler, p *packet.Packet) error {
 	reason := chat.NewBuilder("TODO: ").
 		Bold().
 		Color(chat.ColorGold).

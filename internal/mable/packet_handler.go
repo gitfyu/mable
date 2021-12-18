@@ -1,11 +1,10 @@
 package mable
 
 import (
-	"github.com/gitfyu/mable/network"
-	"github.com/gitfyu/mable/network/protocol/packet"
+	"github.com/gitfyu/mable/protocol/packet"
 )
 
-type packetHandler func(h *connHandler, data *network.PacketData) error
+type packetHandler func(h *connHandler, p *packet.Packet) error
 
 // packetHandlerLookup acts as a map with a packet ID as key and a packetHandler as value
 type packetHandlerLookup []packetHandler

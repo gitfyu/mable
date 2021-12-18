@@ -4,9 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gitfyu/mable/chat"
-	"github.com/gitfyu/mable/network"
-	"github.com/gitfyu/mable/network/protocol"
-	"github.com/gitfyu/mable/network/protocol/packet"
+	"github.com/gitfyu/mable/protocol"
+	"github.com/gitfyu/mable/protocol/packet"
 	"github.com/rs/zerolog/log"
 	"net"
 	"sync/atomic"
@@ -45,10 +44,10 @@ func (h *connHandler) handle() error {
 	var id packet.ID
 	var buf []byte
 	var err error
-	var data network.PacketData
+	var p packet.Packet
 
-	r := network.NewReader(h.conn, network.ReaderConfig{
-		MaxPacketSize: h.serv.cfg.MaxPacketSize,
+	r := packet.NewReader(h.conn, packet.ReaderConfig{
+		MaxSize: h.serv.cfg.MaxPacketSize,
 	})
 
 	for h.IsOpen() {
@@ -62,8 +61,8 @@ func (h *connHandler) handle() error {
 			continue
 		}
 
-		data.Load(buf)
-		if err := h.handlePacket(id, &data); err != nil {
+		p.Load(buf)
+		if err := h.handlePacket(id, &p); err != nil {
 			return err
 		}
 	}
@@ -72,10 +71,10 @@ func (h *connHandler) handle() error {
 }
 
 func (h *connHandler) validId(id packet.ID) bool {
-	return id >= 0 && int(id) < len(stateToPacketHandlers[h.state])
+	return int(id) < len(stateToPacketHandlers[h.state])
 }
 
-func (h *connHandler) handlePacket(id packet.ID, data *network.PacketData) (err error) {
+func (h *connHandler) handlePacket(id packet.ID, data *packet.Packet) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			e := log.Debug().
@@ -111,7 +110,7 @@ func (h *connHandler) IsOpen() bool {
 }
 
 // WritePacket writes a single packet to the client. This function may be called concurrently.
-func (h *connHandler) WritePacket(buf *network.PacketBuilder) error {
+func (h *connHandler) WritePacket(buf *packet.Builder) error {
 	_, err := h.conn.Write(buf.ToBytes())
 	return err
 }
@@ -126,8 +125,8 @@ func (h *connHandler) Disconnect(reason *chat.Msg) error {
 	switch h.state {
 	// TODO impl this for 'play' state in the future as well
 	case protocol.StateLogin:
-		builder := network.AcquirePacketBuilder()
-		defer network.ReleasePacketBuilder(builder)
+		builder := packet.AcquireBuilder()
+		defer packet.ReleaseBuilder(builder)
 
 		if err := h.WritePacket(builder.Init(packet.LoginDisconnect).PutStringFromBytes(str)); err != nil {
 			return err

@@ -1,19 +1,18 @@
-package network
+package packet
 
 import (
 	"bufio"
 	"errors"
-	"github.com/gitfyu/mable/network/protocol"
-	"github.com/gitfyu/mable/network/protocol/packet"
+	"github.com/gitfyu/mable/protocol"
 	"io"
 )
 
-var errPacketTooLarge = errors.New("packet exceeds maximum size")
+var errTooLarge = errors.New("packet exceeds maximum size")
 
 // ReaderConfig is used to configure settings for a Reader
 type ReaderConfig struct {
-	// MaxPacketSize is the maximum size in bytes per packet. Larger packets will be rejected
-	MaxPacketSize int
+	// MaxSize is the maximum size in bytes per packet. Larger packets will be rejected.
+	MaxSize int
 }
 
 // Reader is used to read packets one at a time
@@ -33,13 +32,13 @@ func NewReader(r io.Reader, cfg ReaderConfig) *Reader {
 // ReadPacket reads a single packet. The buf parameter will be used to store the packet if it is large enough, otherwise
 // a new buffer will be allocated. This function returns a buffer, which might be the buffer passed to this function,
 // holding the packets contents.
-func (r *Reader) ReadPacket(buf []byte) (packet.ID, []byte, error) {
+func (r *Reader) ReadPacket(buf []byte) (ID, []byte, error) {
 	var size protocol.VarInt
 	if err := protocol.ReadVarInt(r.reader, &size); err != nil {
 		return 0, nil, err
 	}
-	if int(size) > r.cfg.MaxPacketSize {
-		return 0, nil, errPacketTooLarge
+	if int(size) > r.cfg.MaxSize {
+		return 0, nil, errTooLarge
 	}
 
 	var id protocol.VarInt
@@ -58,5 +57,5 @@ func (r *Reader) ReadPacket(buf []byte) (packet.ID, []byte, error) {
 		return 0, nil, err
 	}
 
-	return packet.ID(id), buf, nil
+	return ID(id), buf, nil
 }
