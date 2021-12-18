@@ -1,9 +1,11 @@
 package mable
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/gitfyu/mable/network"
 	"github.com/gitfyu/mable/network/protocol"
+	"github.com/gitfyu/mable/network/protocol/chat"
 	"github.com/gitfyu/mable/network/protocol/packet"
 	"github.com/rs/zerolog/log"
 	"net"
@@ -115,8 +117,11 @@ func (h *connHandler) WritePacket(buf *network.PacketBuilder) error {
 }
 
 // Disconnect kicks the player with a specified reason
-func (h *connHandler) Disconnect(reason string) error {
-	// TODO implement a message type instead of accepting the raw JSON string as parameter
+func (h *connHandler) Disconnect(reason *chat.Msg) error {
+	str, err := json.Marshal(reason)
+	if err != nil {
+		return err
+	}
 
 	switch h.state {
 	// TODO impl this for 'play' state in the future as well
@@ -124,7 +129,7 @@ func (h *connHandler) Disconnect(reason string) error {
 		builder := network.AcquirePacketBuilder()
 		defer network.ReleasePacketBuilder(builder)
 
-		if err := h.WritePacket(builder.Init(packet.LoginDisconnect).PutString(reason)); err != nil {
+		if err := h.WritePacket(builder.Init(packet.LoginDisconnect).PutStringFromBytes(str)); err != nil {
 			return err
 		}
 

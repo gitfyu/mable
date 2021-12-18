@@ -60,6 +60,11 @@ func (p *PacketBuilder) PutString(s string) *PacketBuilder {
 	return p.PutBytes(b)
 }
 
+func (p *PacketBuilder) PutStringFromBytes(b []byte) *PacketBuilder {
+	p.PutVarInt(protocol.VarInt(len(b)))
+	return p.PutBytes(b)
+}
+
 func (p *PacketBuilder) PutLong(v int64) *PacketBuilder {
 	b := make([]byte, 8)
 	binary.BigEndian.PutUint64(b, uint64(v))
