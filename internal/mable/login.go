@@ -12,6 +12,5 @@ var loginHandlers = newPacketHandlerLookup(
 )
 
 func handleLoginStart(h *connHandler, data *network.PacketData) error {
-	// TODO initialize encryption
-	return nil
+	return h.Disconnect(`{"text":"TODO","color":"yellow"}`)
 }

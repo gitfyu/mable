@@ -10,7 +10,10 @@ import (
 	"sync/atomic"
 )
 
-var errPacketHandlerPanic = errors.New("panic while handling packet")
+var (
+	errPacketHandlerPanic     = errors.New("panic while handling packet")
+	errActionUnsupportedState = errors.New("action not supported in current state")
+)
 
 // stateToPacketHandlers acts as a map with a protocol.State as key to a packetHandlerLookup value
 var stateToPacketHandlers = []packetHandlerLookup{
@@ -109,4 +112,24 @@ func (h *connHandler) IsOpen() bool {
 func (h *connHandler) WritePacket(buf *network.PacketBuilder) error {
 	_, err := h.conn.Write(buf.ToBytes())
 	return err
+}
+
+// Disconnect kicks the player with a specified reason
+func (h *connHandler) Disconnect(reason string) error {
+	// TODO implement a message type instead of accepting the raw JSON string as parameter
+
+	switch h.state {
+	// TODO impl this for 'play' state in the future as well
+	case protocol.StateLogin:
+		builder := network.AcquirePacketBuilder()
+		defer network.ReleasePacketBuilder(builder)
+
+		if err := h.WritePacket(builder.Init(packet.LoginDisconnect).PutString(reason)); err != nil {
+			return err
+		}
+
+		return h.Close()
+	default:
+		return errActionUnsupportedState
+	}
 }

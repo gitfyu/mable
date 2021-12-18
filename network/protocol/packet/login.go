@@ -8,4 +8,6 @@ const (
 
 // Server->Client
 
-const ()
+const (
+	LoginDisconnect ID = iota
+)

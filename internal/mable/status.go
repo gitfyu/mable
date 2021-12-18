@@ -11,7 +11,7 @@ const defaultResponse = `{"version":{"name":"1.7.6-1.8.9","protocol":47},"player
 var statusHandlers = newPacketHandlerLookup(
 	packetHandlers{
 		packet.StatusRequest: handleStatusRequest,
-		packet.Ping:          handlePing,
+		packet.StatusPing:    handlePing,
 	},
 )
 
@@ -31,7 +31,7 @@ func handlePing(h *connHandler, data *network.PacketData) error {
 	buf := network.AcquirePacketBuilder()
 	defer network.ReleasePacketBuilder(buf)
 
-	buf.Init(packet.Pong).
+	buf.Init(packet.StatusPong).
 		PutLong(time)
 
 	if err := h.WritePacket(buf); err != nil {
