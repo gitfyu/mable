@@ -20,9 +20,10 @@ var stateToPacketHandlers = []packetHandlerLookup{
 }
 
 type connHandler struct {
-	serv  *Server
-	conn  net.Conn
-	state protocol.State
+	serv    *Server
+	conn    net.Conn
+	state   protocol.State
+	version protocol.Version
 	// closed acts as an atomic 'boolean' for Close and IsOpen
 	closed int32
 }

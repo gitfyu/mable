@@ -17,7 +17,7 @@ var handshakeHandlers = newPacketHandlerLookup(
 
 func handleHandshake(h *connHandler, data *network.PacketData) error {
 	// protocol version
-	_ = data.GetVarInt()
+	h.version = protocol.Version(data.GetVarInt())
 	// address
 	_ = data.GetString()
 	// port
@@ -28,6 +28,7 @@ func handleHandshake(h *connHandler, data *network.PacketData) error {
 	case protocol.StateStatus:
 		fallthrough
 	case protocol.StateLogin:
+		// TODO ensure the protocol version is supported
 		h.state = s
 	default:
 		return errInvalidState
