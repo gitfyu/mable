@@ -30,8 +30,7 @@ type connHandler struct {
 	version   protocol.Version
 	writer    *packet.Writer
 	writeLock sync.Mutex
-	// closed acts as an atomic 'boolean' for Close and IsOpen
-	closed int32
+	closed    int32
 }
 
 func newConnHandler(s *Server, c net.Conn) *connHandler {
