@@ -22,5 +22,8 @@ const (
 
 	LoginDisconnect ID = 0x00
 
-	PlayDisconnect ID = 0x40
+	PlayJoinGame      ID = 0x01
+	PlaySpawnPosition ID = 0x05
+	PlayPosAndLook    ID = 0x08
+	PlayDisconnect    ID = 0x40
 )

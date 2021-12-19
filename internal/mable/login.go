@@ -3,6 +3,7 @@ package mable
 import (
 	"errors"
 	"github.com/gitfyu/mable/chat"
+	"github.com/gitfyu/mable/entity"
 	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/packet"
 	"github.com/google/uuid"
@@ -21,6 +22,11 @@ func handleLogin(c *conn) error {
 	// TODO implement authenticated login
 
 	id := generateOfflineUUID(username)
+	c.player = &player{
+		name: username,
+		uid:  id,
+		id:   entity.GenId(),
+	}
 	return writeLoginSuccess(c, username, id)
 }
 

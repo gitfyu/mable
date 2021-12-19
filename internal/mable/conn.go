@@ -20,6 +20,7 @@ type conn struct {
 	conn      net.Conn
 	state     protocol.State
 	version   protocol.Version
+	player    *player
 	readBuf   *packet.Buffer
 	reader    *packet.Reader
 	writer    *packet.Writer

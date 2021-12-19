@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/gitfyu/mable/protocol"
 	"github.com/google/uuid"
+	"math"
 	"sync"
 )
 
@@ -34,6 +35,41 @@ func ReleaseBuffer(b *Buffer) {
 	bufferPool.Put(b)
 }
 
+func (b *Buffer) WriteUnsignedByte(v uint8) {
+	b.buf.WriteByte(v)
+}
+
+func (b *Buffer) WriteSignedByte(v int8) {
+	b.buf.WriteByte(byte(v))
+}
+
+func (b *Buffer) WriteBool(v bool) {
+	if v {
+		b.buf.WriteByte(1)
+	} else {
+		b.buf.WriteByte(0)
+	}
+}
+
+func (b *Buffer) ReadUnsignedShort() (uint16, error) {
+	data := make([]byte, 2)
+	if _, err := b.buf.Read(data); err != nil {
+		return 0, err
+	}
+
+	return binary.BigEndian.Uint16(data), nil
+}
+
+func (b *Buffer) WriteInt(v int32) {
+	b.WriteUnsignedInt(uint32(v))
+}
+
+func (b *Buffer) WriteUnsignedInt(v uint32) {
+	data := make([]byte, 4)
+	binary.BigEndian.PutUint32(data, v)
+	b.buf.Write(data)
+}
+
 func (b *Buffer) WriteVarInt(v protocol.VarInt) {
 	data := make([]byte, protocol.VarIntSize(v))
 	protocol.WriteVarInt(data, v)
@@ -47,6 +83,37 @@ func (b *Buffer) ReadVarInt() (protocol.VarInt, error) {
 	}
 
 	return v, nil
+}
+
+func (b *Buffer) ReadLong() (int64, error) {
+	data := make([]byte, 8)
+	if _, err := b.buf.Read(data); err != nil {
+		return 0, err
+	}
+
+	return int64(binary.BigEndian.Uint64(data)), nil
+}
+
+func (b *Buffer) WriteLong(v int64) {
+	b.WriteUnsignedLong(uint64(v))
+}
+
+func (b *Buffer) WriteUnsignedLong(v uint64) {
+	data := make([]byte, 8)
+	binary.BigEndian.PutUint64(data, v)
+	b.buf.Write(data)
+}
+
+func (b *Buffer) WriteFloat(v float32) {
+	b.WriteUnsignedInt(math.Float32bits(v))
+}
+
+func (b *Buffer) WriteDouble(v float64) {
+	b.WriteUnsignedLong(math.Float64bits(v))
+}
+
+func (b *Buffer) WritePosition(x, y, z int32) {
+	b.WriteUnsignedLong((uint64(x&0x3FFFFFF) << 38) | (uint64(y&0xFFF) << 26) | (uint64(z) & 0x3FFFFFF))
 }
 
 func (b *Buffer) WriteString(s string) {
@@ -78,30 +145,6 @@ func (b *Buffer) ReadString() (string, error) {
 	}
 
 	return string(data), nil
-}
-
-func (b *Buffer) ReadUnsignedShort() (uint16, error) {
-	data := make([]byte, 2)
-	if _, err := b.buf.Read(data); err != nil {
-		return 0, err
-	}
-
-	return binary.BigEndian.Uint16(data), nil
-}
-
-func (b *Buffer) ReadLong() (int64, error) {
-	data := make([]byte, 8)
-	if _, err := b.buf.Read(data); err != nil {
-		return 0, err
-	}
-
-	return int64(binary.BigEndian.Uint64(data)), nil
-}
-
-func (b *Buffer) WriteLong(v int64) {
-	data := make([]byte, 8)
-	binary.BigEndian.PutUint64(data, uint64(v))
-	b.buf.Write(data)
 }
 
 func (b *Buffer) WriteUUID(uuid uuid.UUID) {
