@@ -47,8 +47,11 @@ func (h *connHandler) handle() error {
 		MaxSize: h.serv.cfg.MaxPacketSize,
 	})
 
+	buf := packet.AcquireBuffer()
+	defer packet.ReleaseBuffer(buf)
+
 	for h.IsOpen() {
-		id, buf, err := r.ReadPacket()
+		id, err := r.ReadPacket(buf)
 		if err != nil {
 			return err
 		}
@@ -65,11 +68,8 @@ func (h *connHandler) validId(id packet.ID) bool {
 	return int(id) < len(stateToPacketHandlers[h.state])
 }
 
-// handlePacket processes a packet. Packets that are not implemented will simply be ignored. This function will invoke
-// packet.ReleaseBuffer on the provided Buffer before returning.
+// handlePacket processes a packet. Packets that are not implemented will simply be ignored
 func (h *connHandler) handlePacket(id packet.ID, data *packet.Buffer) (err error) {
-	defer packet.ReleaseBuffer(data)
-
 	if !h.validId(id) {
 		// Ignore unknown packets
 		return

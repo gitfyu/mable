@@ -29,29 +29,27 @@ func NewReader(r io.Reader, cfg ReaderConfig) *Reader {
 	}
 }
 
-// ReadPacket reads a single packet. If a nil error is returned, then the returned Buffer should be released using
-// ReleaseBuffer.
-func (r *Reader) ReadPacket() (ID, *Buffer, error) {
+// ReadPacket reads a single packet
+func (r *Reader) ReadPacket(buf *Buffer) (ID, error) {
 	var size protocol.VarInt
 	if err := protocol.ReadVarInt(r.reader, &size); err != nil {
-		return 0, nil, err
+		return 0, err
 	}
 	if int(size) > r.cfg.MaxSize {
-		return 0, nil, errTooLarge
+		return 0, errTooLarge
 	}
 
 	data := make([]byte, int(size))
 	if _, err := io.ReadFull(r.reader, data); err != nil {
-		return 0, nil, err
+		return 0, err
 	}
 
-	buf := AcquireBuffer()
 	_, _ = buf.Write(data)
 
 	id, err := buf.ReadVarInt()
 	if err != nil {
-		return 0, nil, err
+		return 0, err
 	}
 
-	return ID(id), buf, nil
+	return ID(id), nil
 }
