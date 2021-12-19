@@ -3,7 +3,6 @@ package mable
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/gitfyu/mable/chat"
 	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/packet"
@@ -16,18 +15,13 @@ var (
 	errActionUnsupportedState = errors.New("action not supported in current state")
 )
 
-// stateToPacketHandlers acts as a map with a protocol.State as key to a packetHandlerLookup value
-var stateToPacketHandlers = []packetHandlerLookup{
-	handshakeHandlers,
-	statusHandlers,
-	loginHandlers,
-}
-
 type connHandler struct {
 	serv      *Server
 	conn      net.Conn
 	state     protocol.State
 	version   protocol.Version
+	readBuf   *packet.Buffer
+	reader    *packet.Reader
 	writer    *packet.Writer
 	writeLock sync.Mutex
 	closed    int32
@@ -35,35 +29,36 @@ type connHandler struct {
 
 func newConnHandler(s *Server, c net.Conn) *connHandler {
 	return &connHandler{
-		serv:   s,
-		conn:   c,
-		state:  protocol.StateHandshake,
+		serv:    s,
+		conn:    c,
+		state:   protocol.StateHandshake,
+		readBuf: packet.AcquireBuffer(),
+		reader: packet.NewReader(c, packet.ReaderConfig{
+			MaxSize: s.cfg.MaxPacketSize,
+		}),
 		writer: packet.NewWriter(c),
 	}
 }
 
-func (h *connHandler) handle() error {
-	r := packet.NewReader(h.conn, packet.ReaderConfig{
-		MaxSize: h.serv.cfg.MaxPacketSize,
-	})
-
-	buf := packet.AcquireBuffer()
-	defer packet.ReleaseBuffer(buf)
-
-	for h.IsOpen() {
-		id, err := r.ReadPacket(buf)
-		if err != nil {
-			return err
-		}
-
-		if err := h.handlePacket(id, buf); err != nil {
-			return fmt.Errorf("failed to handle packet %d: %w", id, err)
-		}
+func (c *connHandler) handle() error {
+	s, err := handleHandshake(c)
+	if err != nil {
+		return err
 	}
 
-	return nil
+	switch s {
+	case protocol.StateStatus:
+		return handleStatus(c)
+	case protocol.StateLogin:
+		c.state = s
+		return handleLogin(c)
+	default:
+		return errors.New("unknown state")
+	}
 }
 
+// TODO add these functions back for the 'play' packets in the future
+/*
 func (h *connHandler) validId(id packet.ID) bool {
 	return int(id) < len(stateToPacketHandlers[h.state])
 }
@@ -76,41 +71,47 @@ func (h *connHandler) handlePacket(id packet.ID, data *packet.Buffer) (err error
 	}
 
 	return stateToPacketHandlers[h.state][id](h, data)
-}
+}*/
 
 // Close closes the connection, causing the client to be disconnected. This function may be called concurrently. Only
 // the first call to it will actually close the connection, any further calls will simply be ignored.
-func (h *connHandler) Close() error {
+func (c *connHandler) Close() error {
 	// Documentation for net.Conn.Close doesn't seem to indicate whether it can safely be called multiple times, so
 	// this will prevent duplicate calls just in case
-	if !atomic.CompareAndSwapInt32(&h.closed, 0, 1) {
+	if !atomic.CompareAndSwapInt32(&c.closed, 0, 1) {
 		return nil
 	}
 
-	return h.conn.Close()
+	packet.ReleaseBuffer(c.readBuf)
+	return c.conn.Close()
 }
 
 // IsOpen returns whether the connection is still open
-func (h *connHandler) IsOpen() bool {
-	return atomic.LoadInt32(&h.closed) == 0
+func (c *connHandler) IsOpen() bool {
+	return atomic.LoadInt32(&c.closed) == 0
+}
+
+func (c *connHandler) readPacket() (packet.ID, *packet.Buffer, error) {
+	id, err := c.reader.ReadPacket(c.readBuf)
+	return id, c.readBuf, err
 }
 
 // WritePacket writes a single packet to the client. This function may be called concurrently.
-func (h *connHandler) WritePacket(id packet.ID, buf *packet.Buffer) error {
-	h.writeLock.Lock()
-	defer h.writeLock.Unlock()
+func (c *connHandler) WritePacket(id packet.ID, buf *packet.Buffer) error {
+	c.writeLock.Lock()
+	defer c.writeLock.Unlock()
 
-	return h.writer.WritePacket(id, buf)
+	return c.writer.WritePacket(id, buf)
 }
 
 // Disconnect kicks the player with a specified reason
-func (h *connHandler) Disconnect(reason *chat.Msg) error {
+func (c *connHandler) Disconnect(reason *chat.Msg) error {
 	str, err := json.Marshal(reason)
 	if err != nil {
 		return err
 	}
 
-	switch h.state {
+	switch c.state {
 	// TODO impl this for 'play' state in the future as well
 	case protocol.StateLogin:
 		buf := packet.AcquireBuffer()
@@ -118,11 +119,11 @@ func (h *connHandler) Disconnect(reason *chat.Msg) error {
 
 		buf.WriteStringFromBytes(str)
 
-		if err := h.WritePacket(packet.LoginDisconnect, buf); err != nil {
+		if err := c.WritePacket(packet.LoginDisconnect, buf); err != nil {
 			return err
 		}
 
-		return h.Close()
+		return c.Close()
 	default:
 		return errActionUnsupportedState
 	}

@@ -6,45 +6,35 @@ import (
 	"github.com/gitfyu/mable/protocol/packet"
 )
 
-var errInvalidState = errors.New("invalid state")
-
-var handshakeHandlers = newPacketHandlerLookup(
-	packetHandlers{
-		packet.Handshake: handleHandshake,
-	},
-)
-
-func handleHandshake(h *connHandler, data *packet.Buffer) error {
-	ver, err := data.ReadVarInt()
+func handleHandshake(c *connHandler) (protocol.State, error) {
+	id, buf, err := c.readPacket()
 	if err != nil {
-		return err
+		return 0, err
 	}
-	h.version = protocol.Version(ver)
+	if id != packet.Handshake {
+		return 0, errors.New("expected handshake")
+	}
+
+	ver, err := buf.ReadVarInt()
+	if err != nil {
+		return 0, err
+	}
+	c.version = protocol.Version(ver)
 
 	// address
-	if _, err := data.ReadString(); err != nil {
-		return err
+	if _, err := buf.ReadString(); err != nil {
+		return 0, err
 	}
 
 	// port
-	if _, err := data.ReadUnsignedShort(); err != nil {
-		return err
+	if _, err := buf.ReadUnsignedShort(); err != nil {
+		return 0, err
 	}
 
-	nextState, err := data.ReadVarInt()
+	nextState, err := buf.ReadVarInt()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	switch s := protocol.State(nextState); s {
-	case protocol.StateStatus:
-		fallthrough
-	case protocol.StateLogin:
-		// TODO ensure the protocol version is supported
-		h.state = s
-	default:
-		return errInvalidState
-	}
-
-	return nil
+	return protocol.State(nextState), nil
 }

@@ -1,24 +1,41 @@
 package mable
 
 import (
+	"errors"
 	"github.com/gitfyu/mable/chat"
+	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/packet"
 )
 
-var loginHandlers = newPacketHandlerLookup(
-	packetHandlers{
-		packet.LoginStart: handleLoginStart,
-	},
-)
+func handleLogin(c *connHandler) error {
+	if c.version != protocol.Version_1_7_6 && c.version != protocol.Version_1_8 {
+		return cancelLogin(c, "Please use Minecraft 1.7.6-1.8.9!")
+	}
 
-func handleLoginStart(h *connHandler, _ *packet.Buffer) error {
-	reason := chat.NewBuilder("TODO: ").
-		Bold().
-		Color(chat.ColorGold).
-		Append("not yet implemented.").
-		NotBold().
-		Color(chat.ColorYellow).
-		Build()
+	_, err := readLoginStart(c)
+	if err != nil {
+		return err
+	}
 
-	return h.Disconnect(reason)
+	return cancelLogin(c, "TODO")
+}
+
+func cancelLogin(c *connHandler, reason string) error {
+	msg := chat.Msg{
+		Text:  reason,
+		Color: chat.ColorRed,
+	}
+	return c.Disconnect(&msg)
+}
+
+func readLoginStart(c *connHandler) (string, error) {
+	id, buf, err := c.readPacket()
+	if err != nil {
+		return "", err
+	}
+	if id != packet.LoginStart {
+		return "", errors.New("expected login start")
+	}
+
+	return buf.ReadString()
 }
