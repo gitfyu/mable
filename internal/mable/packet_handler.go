@@ -4,7 +4,7 @@ import (
 	"github.com/gitfyu/mable/protocol/packet"
 )
 
-type packetHandler func(h *connHandler, data *packet.Buffer) error
+type packetHandler func(h *conn, data *packet.Buffer) error
 
 // packetHandlerLookup acts as a map with a packet ID as key and a packetHandler as value
 type packetHandlerLookup []packetHandler

@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func handleLogin(c *connHandler) error {
+func handleLogin(c *conn) error {
 	if c.version != protocol.Version_1_7_6 && c.version != protocol.Version_1_8 {
 		return cancelLogin(c, "Please use Minecraft 1.7.6-1.8.9!")
 	}
@@ -24,7 +24,7 @@ func handleLogin(c *connHandler) error {
 	return writeLoginSuccess(c, username, id)
 }
 
-func cancelLogin(c *connHandler, reason string) error {
+func cancelLogin(c *conn, reason string) error {
 	msg := chat.Msg{
 		Text:  reason,
 		Color: chat.ColorRed,
@@ -32,7 +32,7 @@ func cancelLogin(c *connHandler, reason string) error {
 	return c.Disconnect(&msg)
 }
 
-func readLoginStart(c *connHandler) (string, error) {
+func readLoginStart(c *conn) (string, error) {
 	id, buf, err := c.readPacket()
 	if err != nil {
 		return "", err
@@ -44,7 +44,7 @@ func readLoginStart(c *connHandler) (string, error) {
 	return buf.ReadString()
 }
 
-func writeLoginSuccess(c *connHandler, username string, id uuid.UUID) error {
+func writeLoginSuccess(c *conn, username string, id uuid.UUID) error {
 	buf := packet.AcquireBuffer()
 	defer packet.ReleaseBuffer(buf)
 

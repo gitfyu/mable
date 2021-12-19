@@ -15,7 +15,7 @@ var (
 	errActionUnsupportedState = errors.New("action not supported in current state")
 )
 
-type connHandler struct {
+type conn struct {
 	serv      *Server
 	conn      net.Conn
 	state     protocol.State
@@ -27,8 +27,8 @@ type connHandler struct {
 	closed    int32
 }
 
-func newConnHandler(s *Server, c net.Conn) *connHandler {
-	return &connHandler{
+func newConn(s *Server, c net.Conn) *conn {
+	return &conn{
 		serv:    s,
 		conn:    c,
 		state:   protocol.StateHandshake,
@@ -40,7 +40,7 @@ func newConnHandler(s *Server, c net.Conn) *connHandler {
 	}
 }
 
-func (c *connHandler) handle() error {
+func (c *conn) handle() error {
 	s, err := handleHandshake(c)
 	if err != nil {
 		return err
@@ -59,12 +59,12 @@ func (c *connHandler) handle() error {
 
 // TODO add these functions back for the 'play' packets in the future
 /*
-func (h *connHandler) validId(id packet.ID) bool {
+func (h *conn) validId(id packet.ID) bool {
 	return int(id) < len(stateToPacketHandlers[h.state])
 }
 
 // handlePacket processes a packet. Packets that are not implemented will simply be ignored
-func (h *connHandler) handlePacket(id packet.ID, data *packet.Buffer) (err error) {
+func (h *conn) handlePacket(id packet.ID, data *packet.Buffer) (err error) {
 	if !h.validId(id) {
 		// Ignore unknown packets
 		return
@@ -75,7 +75,7 @@ func (h *connHandler) handlePacket(id packet.ID, data *packet.Buffer) (err error
 
 // Close closes the connection, causing the client to be disconnected. This function may be called concurrently. Only
 // the first call to it will actually close the connection, any further calls will simply be ignored.
-func (c *connHandler) Close() error {
+func (c *conn) Close() error {
 	// Documentation for net.Conn.Close doesn't seem to indicate whether it can safely be called multiple times, so
 	// this will prevent duplicate calls just in case
 	if !atomic.CompareAndSwapInt32(&c.closed, 0, 1) {
@@ -87,17 +87,17 @@ func (c *connHandler) Close() error {
 }
 
 // IsOpen returns whether the connection is still open
-func (c *connHandler) IsOpen() bool {
+func (c *conn) IsOpen() bool {
 	return atomic.LoadInt32(&c.closed) == 0
 }
 
-func (c *connHandler) readPacket() (packet.ID, *packet.Buffer, error) {
+func (c *conn) readPacket() (packet.ID, *packet.Buffer, error) {
 	id, err := c.reader.ReadPacket(c.readBuf)
 	return id, c.readBuf, err
 }
 
 // WritePacket writes a single packet to the client. This function may be called concurrently.
-func (c *connHandler) WritePacket(id packet.ID, buf *packet.Buffer) error {
+func (c *conn) WritePacket(id packet.ID, buf *packet.Buffer) error {
 	c.writeLock.Lock()
 	defer c.writeLock.Unlock()
 
@@ -105,7 +105,7 @@ func (c *connHandler) WritePacket(id packet.ID, buf *packet.Buffer) error {
 }
 
 // Disconnect kicks the player with a specified reason
-func (c *connHandler) Disconnect(reason *chat.Msg) error {
+func (c *conn) Disconnect(reason *chat.Msg) error {
 	str, err := json.Marshal(reason)
 	if err != nil {
 		return err

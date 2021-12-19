@@ -8,7 +8,7 @@ import (
 // TODO implement a way to properly generate the JSON response in the future
 const defaultResponse = `{"version":{"name":"1.7.6-1.8.9","protocol":47},"players":{"max":0,"online":0},"description":{"text":"Hello world"}}`
 
-func handleStatus(c *connHandler) error {
+func handleStatus(c *conn) error {
 	if err := readStatusRequest(c); err != nil {
 		return err
 	}
@@ -24,7 +24,7 @@ func handleStatus(c *connHandler) error {
 	return writeStatusPong(c, time)
 }
 
-func readStatusRequest(c *connHandler) error {
+func readStatusRequest(c *conn) error {
 	id, _, err := c.readPacket()
 	if err != nil {
 		return err
@@ -36,7 +36,7 @@ func readStatusRequest(c *connHandler) error {
 	return nil
 }
 
-func writeStatusResponse(c *connHandler) error {
+func writeStatusResponse(c *conn) error {
 	buf := packet.AcquireBuffer()
 	defer packet.ReleaseBuffer(buf)
 
@@ -44,7 +44,7 @@ func writeStatusResponse(c *connHandler) error {
 	return c.WritePacket(packet.StatusResponse, buf)
 }
 
-func readStatusPing(c *connHandler) (int64, error) {
+func readStatusPing(c *conn) (int64, error) {
 	id, buf, err := c.readPacket()
 	if err != nil {
 		return 0, err
@@ -61,7 +61,7 @@ func readStatusPing(c *connHandler) (int64, error) {
 	return time, nil
 }
 
-func writeStatusPong(c *connHandler, time int64) error {
+func writeStatusPong(c *conn, time int64) error {
 	buf := packet.AcquireBuffer()
 	defer packet.ReleaseBuffer(buf)
 

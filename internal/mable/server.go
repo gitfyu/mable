@@ -50,7 +50,7 @@ func (s *Server) handleConn(c net.Conn) {
 		}
 	}()
 
-	h := newConnHandler(s, c)
+	h := newConn(s, c)
 	defer h.Close()
 
 	if err := h.handle(); err != nil {
