@@ -1,9 +1,9 @@
 package mable
 
 import (
-	"github.com/gitfyu/mable/entity"
 	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/packet"
+	"github.com/gitfyu/mable/world"
 )
 
 func handlePlay(c *conn) error {
@@ -13,7 +13,7 @@ func handlePlay(c *conn) error {
 	if err := writeSpawnPosition(c); err != nil {
 		return err
 	}
-	if err := writePlayerPosAndLook(c); err != nil {
+	if err := c.player.Teleport(world.NewPos(0, 0, 0, 0, 0)); err != nil {
 		return err
 	}
 
@@ -60,28 +60,4 @@ func writeSpawnPosition(c *conn) error {
 	}
 
 	return c.WritePacket(packet.PlaySpawnPosition, buf)
-}
-
-func writePlayerPosAndLook(c *conn) error {
-	buf := packet.AcquireBuffer()
-	defer packet.ReleaseBuffer(buf)
-
-	var x, y, z float64
-	var yaw, pitch float32
-
-	buf.WriteDouble(x)
-	buf.WriteDouble(y + entity.PlayerEyeHeight)
-	buf.WriteDouble(z)
-	buf.WriteFloat(yaw)
-	buf.WriteFloat(pitch)
-
-	if c.version == protocol.Version_1_8 {
-		// bitfield for absolute/relative values
-		buf.WriteSignedByte(0)
-	} else {
-		// on ground
-		buf.WriteBool(false)
-	}
-
-	return c.WritePacket(packet.PlayPosAndLook, buf)
 }
