@@ -10,7 +10,8 @@ const (
 	StatusRequest ID = 0x00
 	StatusPing    ID = 0x01
 
-	LoginStart ID = 0x00
+	LoginStart   ID = 0x00
+	LoginSuccess ID = 0x02
 )
 
 // Server -> Client

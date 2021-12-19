@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"github.com/gitfyu/mable/protocol"
+	"github.com/google/uuid"
 	"sync"
 )
 
@@ -101,6 +102,11 @@ func (b *Buffer) WriteLong(v int64) {
 	data := make([]byte, 8)
 	binary.BigEndian.PutUint64(data, uint64(v))
 	b.buf.Write(data)
+}
+
+func (b *Buffer) WriteUUID(uuid uuid.UUID) {
+	buf, _ := uuid.MarshalBinary()
+	b.buf.Write(buf)
 }
 
 // Write writes the given data to the buffer. It never returns an error.

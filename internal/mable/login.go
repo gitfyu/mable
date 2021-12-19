@@ -5,6 +5,7 @@ import (
 	"github.com/gitfyu/mable/chat"
 	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/packet"
+	"github.com/google/uuid"
 )
 
 func handleLogin(c *connHandler) error {
@@ -12,12 +13,15 @@ func handleLogin(c *connHandler) error {
 		return cancelLogin(c, "Please use Minecraft 1.7.6-1.8.9!")
 	}
 
-	_, err := readLoginStart(c)
+	username, err := readLoginStart(c)
 	if err != nil {
 		return err
 	}
 
-	return cancelLogin(c, "TODO")
+	// TODO implement authenticated login
+
+	id := generateOfflineUUID(username)
+	return writeLoginSuccess(c, username, id)
 }
 
 func cancelLogin(c *connHandler, reason string) error {
@@ -38,4 +42,14 @@ func readLoginStart(c *connHandler) (string, error) {
 	}
 
 	return buf.ReadString()
+}
+
+func writeLoginSuccess(c *connHandler, username string, id uuid.UUID) error {
+	buf := packet.AcquireBuffer()
+	defer packet.ReleaseBuffer(buf)
+
+	buf.WriteString(id.String())
+	buf.WriteString(username)
+
+	return c.WritePacket(packet.LoginSuccess, buf)
 }
