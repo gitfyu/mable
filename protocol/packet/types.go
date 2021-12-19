@@ -21,4 +21,6 @@ const (
 	StatusPong     ID = 0x01
 
 	LoginDisconnect ID = 0x00
+
+	PlayDisconnect ID = 0x40
 )

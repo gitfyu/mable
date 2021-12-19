@@ -51,27 +51,16 @@ func (c *conn) handle() error {
 		return handleStatus(c)
 	case protocol.StateLogin:
 		c.state = s
-		return handleLogin(c)
+		if err := handleLogin(c); err != nil {
+			return err
+		}
+
+		c.state = protocol.StatePlay
+		return handlePlay(c)
 	default:
 		return errors.New("unknown state")
 	}
 }
-
-// TODO add these functions back for the 'play' packets in the future
-/*
-func (h *conn) validId(id packet.ID) bool {
-	return int(id) < len(stateToPacketHandlers[h.state])
-}
-
-// handlePacket processes a packet. Packets that are not implemented will simply be ignored
-func (h *conn) handlePacket(id packet.ID, data *packet.Buffer) (err error) {
-	if !h.validId(id) {
-		// Ignore unknown packets
-		return
-	}
-
-	return stateToPacketHandlers[h.state][id](h, data)
-}*/
 
 // Close closes the connection, causing the client to be disconnected. This function may be called concurrently. Only
 // the first call to it will actually close the connection, any further calls will simply be ignored.
@@ -111,20 +100,25 @@ func (c *conn) Disconnect(reason *chat.Msg) error {
 		return err
 	}
 
+	var id packet.ID
+
 	switch c.state {
-	// TODO impl this for 'play' state in the future as well
+	case protocol.StatePlay:
+		id = packet.PlayDisconnect
 	case protocol.StateLogin:
-		buf := packet.AcquireBuffer()
-		defer packet.ReleaseBuffer(buf)
-
-		buf.WriteStringFromBytes(str)
-
-		if err := c.WritePacket(packet.LoginDisconnect, buf); err != nil {
-			return err
-		}
-
-		return c.Close()
+		id = packet.LoginDisconnect
 	default:
 		return errActionUnsupportedState
 	}
+
+	buf := packet.AcquireBuffer()
+	defer packet.ReleaseBuffer(buf)
+
+	buf.WriteStringFromBytes(str)
+
+	if err := c.WritePacket(id, buf); err != nil {
+		return err
+	}
+
+	return c.Close()
 }
