@@ -15,7 +15,7 @@ type ReaderConfig struct {
 	MaxSize int
 }
 
-// Reader is used to read packets one at a time
+// Reader is used to read packets
 type Reader struct {
 	reader *bufio.Reader
 	cfg    ReaderConfig
@@ -29,10 +29,9 @@ func NewReader(r io.Reader, cfg ReaderConfig) *Reader {
 	}
 }
 
-// ReadPacket reads a single packet. The buf parameter will be used to store the packet if it is large enough, otherwise
-// a new buffer will be allocated. This function returns a buffer, which might be the buffer passed to this function,
-// holding the packets contents.
-func (r *Reader) ReadPacket(buf []byte) (ID, []byte, error) {
+// ReadPacket reads a single packet. If a nil error is returned, then the returned Buffer should be released using
+// ReleaseBuffer.
+func (r *Reader) ReadPacket() (ID, *Buffer, error) {
 	var size protocol.VarInt
 	if err := protocol.ReadVarInt(r.reader, &size); err != nil {
 		return 0, nil, err
@@ -46,16 +45,13 @@ func (r *Reader) ReadPacket(buf []byte) (ID, []byte, error) {
 		return 0, nil, err
 	}
 
-	dataSize := int(size) - protocol.VarIntSize(id)
-	if cap(buf) >= dataSize {
-		buf = buf[:dataSize]
-	} else {
-		buf = make([]byte, dataSize)
-	}
-
-	if _, err := io.ReadFull(r.reader, buf); err != nil {
+	data := make([]byte, int(size)-protocol.VarIntSize(id))
+	if _, err := io.ReadFull(r.reader, data); err != nil {
 		return 0, nil, err
 	}
+
+	buf := AcquireBuffer()
+	_, _ = buf.Write(data)
 
 	return ID(id), buf, nil
 }

@@ -3,16 +3,16 @@ package mable
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/gitfyu/mable/chat"
 	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/packet"
-	"github.com/rs/zerolog/log"
 	"net"
+	"sync"
 	"sync/atomic"
 )
 
 var (
-	errPacketHandlerPanic     = errors.New("panic while handling packet")
 	errActionUnsupportedState = errors.New("action not supported in current state")
 )
 
@@ -24,46 +24,38 @@ var stateToPacketHandlers = []packetHandlerLookup{
 }
 
 type connHandler struct {
-	serv    *Server
-	conn    net.Conn
-	state   protocol.State
-	version protocol.Version
+	serv      *Server
+	conn      net.Conn
+	state     protocol.State
+	version   protocol.Version
+	writer    *packet.Writer
+	writeLock sync.Mutex
 	// closed acts as an atomic 'boolean' for Close and IsOpen
 	closed int32
 }
 
 func newConnHandler(s *Server, c net.Conn) *connHandler {
 	return &connHandler{
-		serv:  s,
-		conn:  c,
-		state: protocol.StateHandshake,
+		serv:   s,
+		conn:   c,
+		state:  protocol.StateHandshake,
+		writer: packet.NewWriter(c),
 	}
 }
 
 func (h *connHandler) handle() error {
-	var id packet.ID
-	var buf []byte
-	var err error
-	var p packet.Packet
-
 	r := packet.NewReader(h.conn, packet.ReaderConfig{
 		MaxSize: h.serv.cfg.MaxPacketSize,
 	})
 
 	for h.IsOpen() {
-		id, buf, err = r.ReadPacket(buf)
+		id, buf, err := r.ReadPacket()
 		if err != nil {
 			return err
 		}
 
-		if !h.validId(id) {
-			// Ignore unknown packets
-			continue
-		}
-
-		p.Load(buf)
-		if err := h.handlePacket(id, &p); err != nil {
-			return err
+		if err := h.handlePacket(id, buf); err != nil {
+			return fmt.Errorf("failed to handle packet %d: %w", id, err)
 		}
 	}
 
@@ -74,21 +66,16 @@ func (h *connHandler) validId(id packet.ID) bool {
 	return int(id) < len(stateToPacketHandlers[h.state])
 }
 
-func (h *connHandler) handlePacket(id packet.ID, data *packet.Packet) (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			e := log.Debug().
-				Int("id", int(id)).
-				Int("state", int(h.state))
+// handlePacket processes a packet. Packets that are not implemented will simply be ignored. This function will invoke
+// packet.ReleaseBuffer on the provided Buffer before returning.
+func (h *connHandler) handlePacket(id packet.ID, data *packet.Buffer) (err error) {
+	defer packet.ReleaseBuffer(data)
 
-			if err, ok := r.(error); ok {
-				e.Err(err)
-			}
+	if !h.validId(id) {
+		// Ignore unknown packets
+		return
+	}
 
-			e.Msg("Error handling packet")
-			err = errPacketHandlerPanic
-		}
-	}()
 	return stateToPacketHandlers[h.state][id](h, data)
 }
 
@@ -110,9 +97,11 @@ func (h *connHandler) IsOpen() bool {
 }
 
 // WritePacket writes a single packet to the client. This function may be called concurrently.
-func (h *connHandler) WritePacket(buf *packet.Builder) error {
-	_, err := h.conn.Write(buf.ToBytes())
-	return err
+func (h *connHandler) WritePacket(id packet.ID, buf *packet.Buffer) error {
+	h.writeLock.Lock()
+	defer h.writeLock.Unlock()
+
+	return h.writer.WritePacket(id, buf)
 }
 
 // Disconnect kicks the player with a specified reason
@@ -125,10 +114,12 @@ func (h *connHandler) Disconnect(reason *chat.Msg) error {
 	switch h.state {
 	// TODO impl this for 'play' state in the future as well
 	case protocol.StateLogin:
-		builder := packet.AcquireBuilder()
-		defer packet.ReleaseBuilder(builder)
+		buf := packet.AcquireBuffer()
+		defer packet.ReleaseBuffer(buf)
 
-		if err := h.WritePacket(builder.Init(packet.LoginDisconnect).PutStringFromBytes(str)); err != nil {
+		buf.WriteStringFromBytes(str)
+
+		if err := h.WritePacket(packet.LoginDisconnect, buf); err != nil {
 			return err
 		}
 

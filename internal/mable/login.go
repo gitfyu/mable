@@ -11,7 +11,7 @@ var loginHandlers = newPacketHandlerLookup(
 	},
 )
 
-func handleLoginStart(h *connHandler, p *packet.Packet) error {
+func handleLoginStart(h *connHandler, _ *packet.Buffer) error {
 	reason := chat.NewBuilder("TODO: ").
 		Bold().
 		Color(chat.ColorGold).

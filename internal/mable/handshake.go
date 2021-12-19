@@ -14,14 +14,27 @@ var handshakeHandlers = newPacketHandlerLookup(
 	},
 )
 
-func handleHandshake(h *connHandler, p *packet.Packet) error {
-	// protocol version
-	h.version = protocol.Version(p.GetVarInt())
+func handleHandshake(h *connHandler, data *packet.Buffer) error {
+	ver, err := data.ReadVarInt()
+	if err != nil {
+		return err
+	}
+	h.version = protocol.Version(ver)
+
 	// address
-	_ = p.GetString()
+	if _, err := data.ReadString(); err != nil {
+		return err
+	}
+
 	// port
-	_ = p.GetUnsignedShort()
-	nextState := p.GetVarInt()
+	if _, err := data.ReadUnsignedShort(); err != nil {
+		return err
+	}
+
+	nextState, err := data.ReadVarInt()
+	if err != nil {
+		return err
+	}
 
 	switch s := protocol.State(nextState); s {
 	case protocol.StateStatus:

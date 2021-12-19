@@ -14,26 +14,25 @@ var statusHandlers = newPacketHandlerLookup(
 	},
 )
 
-func handleStatusRequest(h *connHandler, _ *packet.Packet) error {
-	buf := packet.AcquireBuilder()
-	defer packet.ReleaseBuilder(buf)
+func handleStatusRequest(h *connHandler, _ *packet.Buffer) error {
+	buf := packet.AcquireBuffer()
+	defer packet.ReleaseBuffer(buf)
 
-	buf.Init(packet.StatusResponse).
-		PutString(defaultResponse)
-
-	return h.WritePacket(buf)
+	buf.WriteString(defaultResponse)
+	return h.WritePacket(packet.StatusResponse, buf)
 }
 
-func handlePing(h *connHandler, p *packet.Packet) error {
-	time := p.GetLong()
+func handlePing(h *connHandler, data *packet.Buffer) error {
+	time, err := data.ReadLong()
+	if err != nil {
+		return err
+	}
 
-	buf := packet.AcquireBuilder()
-	defer packet.ReleaseBuilder(buf)
+	buf := packet.AcquireBuffer()
+	defer packet.ReleaseBuffer(buf)
 
-	buf.Init(packet.StatusPong).
-		PutLong(time)
-
-	if err := h.WritePacket(buf); err != nil {
+	buf.WriteLong(time)
+	if err := h.WritePacket(packet.StatusPong, buf); err != nil {
 		return err
 	}
 
