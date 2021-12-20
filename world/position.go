@@ -1,6 +1,6 @@
 package world
 
-type Position struct {
+type Pos struct {
 	X     float64
 	Y     float64
 	Z     float64
@@ -8,8 +8,8 @@ type Position struct {
 	Pitch float32
 }
 
-func NewPos(x, y, z float64, yaw, pitch float32) Position {
-	return Position{
+func NewPos(x, y, z float64, yaw, pitch float32) Pos {
+	return Pos{
 		X:     x,
 		Y:     y,
 		Z:     z,

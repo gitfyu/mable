@@ -22,7 +22,7 @@ type Player struct {
 	name    string
 	uid     uuid.UUID
 	conn    PlayerConn
-	pos     world.Position
+	pos     world.Pos
 	posLock sync.RWMutex
 }
 
@@ -54,7 +54,7 @@ func (p *Player) SetSpawnPos(x, y, z int32) error {
 	return p.conn.WritePacket(packet.PlaySpawnPosition, buf)
 }
 
-func (p *Player) Teleport(pos world.Position) error {
+func (p *Player) Teleport(pos world.Pos) error {
 	p.posLock.Lock()
 	defer p.posLock.Unlock()
 
