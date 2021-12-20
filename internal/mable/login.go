@@ -22,11 +22,7 @@ func handleLogin(c *conn) error {
 	// TODO implement authenticated login
 
 	id := generateOfflineUUID(username)
-	c.player = &player{
-		name: username,
-		uid:  id,
-		id:   entity.GenId(),
-	}
+	c.player = entity.NewPlayer(username, id, c)
 	return writeLoginSuccess(c, username, id)
 }
 

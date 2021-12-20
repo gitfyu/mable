@@ -10,7 +10,7 @@ func handlePlay(c *conn) error {
 	if err := writeJoinGame(c); err != nil {
 		return err
 	}
-	if err := writeSpawnPosition(c); err != nil {
+	if err := c.player.SetSpawnPos(0, 0, 0); err != nil {
 		return err
 	}
 	if err := c.player.Teleport(world.NewPos(0, 0, 0, 0, 0)); err != nil {
@@ -25,7 +25,7 @@ func writeJoinGame(c *conn) error {
 	buf := packet.AcquireBuffer()
 	defer packet.ReleaseBuffer(buf)
 
-	buf.WriteInt(int32(c.player.id))
+	buf.WriteInt(int32(c.player.GetEntityID()))
 	// survival gamemode
 	buf.WriteUnsignedByte(uint8(0))
 	// overworld dimension
@@ -43,21 +43,4 @@ func writeJoinGame(c *conn) error {
 	}
 
 	return c.WritePacket(packet.PlayJoinGame, buf)
-}
-
-func writeSpawnPosition(c *conn) error {
-	buf := packet.AcquireBuffer()
-	defer packet.ReleaseBuffer(buf)
-
-	var x, y, z int32
-
-	if c.version == protocol.Version_1_8 {
-		buf.WritePosition(x, y, z)
-	} else {
-		buf.WriteInt(x)
-		buf.WriteInt(y)
-		buf.WriteInt(z)
-	}
-
-	return c.WritePacket(packet.PlaySpawnPosition, buf)
 }

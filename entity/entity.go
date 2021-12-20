@@ -10,3 +10,15 @@ var entityIdCounter int32
 func GenId() ID {
 	return ID(atomic.AddInt32(&entityIdCounter, 1))
 }
+
+type Entity struct {
+	id ID
+}
+
+func NewEntity() Entity {
+	return Entity{id: GenId()}
+}
+
+func (e *Entity) GetEntityID() ID {
+	return e.id
+}

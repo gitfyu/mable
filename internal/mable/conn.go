@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gitfyu/mable/chat"
+	"github.com/gitfyu/mable/entity"
 	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/packet"
 	"net"
@@ -20,7 +21,7 @@ type conn struct {
 	conn      net.Conn
 	state     protocol.State
 	version   protocol.Version
-	player    *player
+	player    *entity.Player
 	readBuf   *packet.Buffer
 	reader    *packet.Reader
 	writer    *packet.Writer
@@ -84,6 +85,10 @@ func (c *conn) IsOpen() bool {
 func (c *conn) readPacket() (packet.ID, *packet.Buffer, error) {
 	id, err := c.reader.ReadPacket(c.readBuf)
 	return id, c.readBuf, err
+}
+
+func (c *conn) Version() protocol.Version {
+	return c.version
 }
 
 // WritePacket writes a single packet to the client. This function may be called concurrently.
