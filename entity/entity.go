@@ -11,6 +11,7 @@ func GenId() ID {
 	return ID(atomic.AddInt32(&entityIdCounter, 1))
 }
 
+// Entity is the base type for all entities
 type Entity struct {
 	id ID
 }

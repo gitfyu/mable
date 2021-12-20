@@ -11,6 +11,7 @@ const (
 	StyleOff
 )
 
+// Msg represents a chat message. For complex messages, it might be easier to use Builder to construct them.
 type Msg struct {
 	Text          string `json:"text"`
 	Bold          Style  `json:"bold,omitempty"`

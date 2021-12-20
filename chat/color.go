@@ -4,9 +4,11 @@ import "errors"
 
 var errInvalidColor = errors.New("invalid color")
 
+// Color represents a color code used in a Msg
 type Color uint8
 
 const (
+	// ColorReset resets the color to the default. Which value that is depends on the context of the Msg.
 	ColorReset Color = iota
 	ColorBlack
 	ColorDarkBlue
