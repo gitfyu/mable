@@ -6,6 +6,8 @@ import (
 	"github.com/gitfyu/mable/protocol/chunk"
 	"github.com/gitfyu/mable/protocol/packet"
 	"github.com/gitfyu/mable/world"
+	"github.com/gitfyu/mable/world/biome"
+	"github.com/gitfyu/mable/world/block"
 	"github.com/google/uuid"
 	"sync"
 )
@@ -95,18 +97,42 @@ func (p *Player) Teleport(pos world.Pos) error {
 
 // TODO currently the actual data being sent is hardcoded, in the future it should be passed as a parameter
 
-func (p *Player) SendChunkData(x, z int32) error {
+func (p *Player) SendChunkData(chunkX, chunkZ int32) error {
 	buf := packet.AcquireBuffer()
 	defer packet.ReleaseBuffer(buf)
 
-	buf.WriteInt(x)
-	buf.WriteInt(z)
+	buf.WriteInt(chunkX)
+	buf.WriteInt(chunkZ)
+	// true means full chunk
 	buf.WriteBool(true)
 
-	// this mask only has it's first bit set, indicating that only the chunk section at Y=0 will be sent
-	mask := chunk.SectionMask(1)
-	buf.WriteUnsignedShort(uint16(mask))
-	chunk.WriteChunkData(buf, mask)
+	// mask, first bit set means only the lowest section is sent
+	buf.WriteUnsignedShort(1)
+	buf.WriteVarInt(protocol.VarInt(chunk.TotalDataSize(1)))
+
+	// blocks
+	for y := 0; y < 16; y++ {
+		for z := 0; z < 16; z++ {
+			for x := 0; x < 16; x++ {
+				buf.WriteUnsignedShortLittleEndian(chunk.EncodeBlockData(block.Stone, 0))
+			}
+		}
+	}
+
+	// block light
+	for i := 0; i < chunk.LightDataSize; i++ {
+		buf.WriteUnsignedByte(chunk.FullBright<<4 | chunk.FullBright)
+	}
+
+	// skylight
+	for i := 0; i < chunk.LightDataSize; i++ {
+		buf.WriteUnsignedByte(chunk.FullBright<<4 | chunk.FullBright)
+	}
+
+	// biomes
+	for i := 0; i < 256; i++ {
+		buf.WriteUnsignedByte(uint8(biome.Plains))
+	}
 
 	return p.conn.WritePacket(packet.PlayChunkData, buf)
 }
