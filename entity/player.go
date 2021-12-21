@@ -32,6 +32,7 @@ type Player struct {
 	conn    PlayerConn
 	pos     world.Pos
 	posLock sync.RWMutex
+	pings   chan int32
 }
 
 // NewPlayer constructs a new player, conn may be set to nil for NPCs
@@ -135,4 +136,18 @@ func (p *Player) SendChunkData(chunkX, chunkZ int32) error {
 	}
 
 	return p.conn.WritePacket(packet.PlayChunkData, buf)
+}
+
+func (p *Player) Ping() error {
+	buf := packet.AcquireBuffer()
+	defer packet.ReleaseBuffer(buf)
+
+	// TODO currently the same arbitrary ID is sent every time, since the server has no use for the response (yet)
+	if p.conn.Version() == protocol.Version_1_8 {
+		buf.WriteVarInt(0)
+	} else {
+		buf.WriteInt(0)
+	}
+
+	return p.conn.WritePacket(packet.PlayKeepAlive, buf)
 }

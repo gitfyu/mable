@@ -4,6 +4,7 @@ import (
 	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/packet"
 	"github.com/gitfyu/mable/world"
+	"time"
 )
 
 func handlePlay(c *conn) error {
@@ -19,6 +20,14 @@ func handlePlay(c *conn) error {
 	if err := c.player.Teleport(world.NewPos(8, 16, 8, 0, 0)); err != nil {
 		return err
 	}
+
+	go func() {
+		ticker := time.NewTicker(time.Second * 5)
+		for {
+			<-ticker.C
+			_ = c.player.Ping()
+		}
+	}()
 
 	// TODO
 	select {}
