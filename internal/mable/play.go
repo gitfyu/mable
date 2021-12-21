@@ -10,10 +10,13 @@ func handlePlay(c *conn) error {
 	if err := writeJoinGame(c); err != nil {
 		return err
 	}
+	if err := c.player.SendChunkData(0, 0); err != nil {
+		return err
+	}
 	if err := c.player.SetSpawnPos(0, 0, 0); err != nil {
 		return err
 	}
-	if err := c.player.Teleport(world.NewPos(0, 0, 0, 0, 0)); err != nil {
+	if err := c.player.Teleport(world.NewPos(8, 16, 8, 0, 0)); err != nil {
 		return err
 	}
 
@@ -26,8 +29,8 @@ func writeJoinGame(c *conn) error {
 	defer packet.ReleaseBuffer(buf)
 
 	buf.WriteInt(int32(c.player.GetEntityID()))
-	// survival gamemode
-	buf.WriteUnsignedByte(uint8(0))
+	// creative gamemode
+	buf.WriteUnsignedByte(uint8(1))
 	// overworld dimension
 	buf.WriteSignedByte(0)
 	// easy difficulty

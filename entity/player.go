@@ -3,6 +3,7 @@ package entity
 import (
 	"github.com/gitfyu/mable/chat"
 	"github.com/gitfyu/mable/protocol"
+	"github.com/gitfyu/mable/protocol/chunk"
 	"github.com/gitfyu/mable/protocol/packet"
 	"github.com/gitfyu/mable/world"
 	"github.com/google/uuid"
@@ -90,4 +91,22 @@ func (p *Player) Teleport(pos world.Pos) error {
 	}
 
 	return p.conn.WritePacket(packet.PlayPosAndLook, buf)
+}
+
+// TODO currently the actual data being sent is hardcoded, in the future it should be passed as a parameter
+
+func (p *Player) SendChunkData(x, z int32) error {
+	buf := packet.AcquireBuffer()
+	defer packet.ReleaseBuffer(buf)
+
+	buf.WriteInt(x)
+	buf.WriteInt(z)
+	buf.WriteBool(true)
+
+	// this mask only has it's first bit set, indicating that only the chunk section at Y=0 will be sent
+	mask := chunk.SectionMask(1)
+	buf.WriteUnsignedShort(uint16(mask))
+	chunk.WriteChunkData(buf, mask)
+
+	return p.conn.WritePacket(packet.PlayChunkData, buf)
 }

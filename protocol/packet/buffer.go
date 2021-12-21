@@ -51,6 +51,18 @@ func (b *Buffer) WriteBool(v bool) {
 	}
 }
 
+func (b *Buffer) WriteUnsignedShort(v uint16) {
+	data := make([]byte, 2)
+	binary.BigEndian.PutUint16(data, v)
+	b.buf.Write(data)
+}
+
+func (b *Buffer) WriteUnsignedShortLittleEndian(v uint16) {
+	data := make([]byte, 2)
+	binary.LittleEndian.PutUint16(data, v)
+	b.buf.Write(data)
+}
+
 func (b *Buffer) ReadUnsignedShort() (uint16, error) {
 	data := make([]byte, 2)
 	if _, err := b.buf.Read(data); err != nil {
