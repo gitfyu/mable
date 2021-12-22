@@ -10,6 +10,7 @@ import (
 	"net"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 var (
@@ -83,6 +84,10 @@ func (c *conn) IsOpen() bool {
 }
 
 func (c *conn) readPacket() (packet.ID, *packet.Buffer, error) {
+	if err := c.conn.SetReadDeadline(time.Now().Add(time.Second * time.Duration(c.serv.cfg.ReadTimeout))); err != nil {
+		return 0, nil, err
+	}
+
 	id, err := c.reader.ReadPacket(c.readBuf)
 	return id, c.readBuf, err
 }

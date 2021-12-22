@@ -13,6 +13,8 @@ type Config struct {
 	MaxPacketSize int `toml:"max_packet_size"`
 	// DebugLogs indicates whether debug messages should be logged
 	DebugLogs bool `toml:"debug_logs"`
+	// ReadTimeout is the time in seconds after an idle client is kicked
+	ReadTimeout int `toml:"read_timeout"`
 }
 
 // DefaultConfig returns a Config containing the default configuration values
@@ -22,6 +24,7 @@ func DefaultConfig() *Config {
 		// TODO currently this is just an arbitrarily chosen limit
 		MaxPacketSize: 1 << 16,
 		DebugLogs:     true,
+		ReadTimeout:   20,
 	}
 }
 
