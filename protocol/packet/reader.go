@@ -39,17 +39,17 @@ func (r *Reader) ReadPacket(buf *Buffer) (ID, error) {
 		return 0, errTooLarge
 	}
 
-	data := make([]byte, int(size))
+	var id protocol.VarInt
+	if err := protocol.ReadVarInt(r.reader, &id); err != nil {
+		return 0, err
+	}
+
+	data := make([]byte, int(size)-protocol.VarIntSize(id))
 	if _, err := io.ReadFull(r.reader, data); err != nil {
 		return 0, err
 	}
 
 	_, _ = buf.Write(data)
-
-	id, err := buf.ReadVarInt()
-	if err != nil {
-		return 0, err
-	}
 
 	return ID(id), nil
 }
