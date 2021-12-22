@@ -35,6 +35,10 @@ func ReleaseBuffer(b *Buffer) {
 	bufferPool.Put(b)
 }
 
+func (b *Buffer) Reset() {
+	b.buf.Reset()
+}
+
 func (b *Buffer) WriteUnsignedByte(v uint8) {
 	b.buf.WriteByte(v)
 }

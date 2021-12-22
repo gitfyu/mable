@@ -88,6 +88,7 @@ func (c *conn) readPacket() (packet.ID, *packet.Buffer, error) {
 		return 0, nil, err
 	}
 
+	c.readBuf.Reset()
 	id, err := c.reader.ReadPacket(c.readBuf)
 	return id, c.readBuf, err
 }
