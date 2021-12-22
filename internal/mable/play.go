@@ -1,10 +1,10 @@
 package mable
 
 import (
+	"context"
 	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/packet"
 	"github.com/gitfyu/mable/world"
-	"time"
 )
 
 func handlePlay(c *conn) error {
@@ -21,16 +21,19 @@ func handlePlay(c *conn) error {
 		return err
 	}
 
-	go func() {
-		ticker := time.NewTicker(time.Second * 5)
-		for {
-			<-ticker.C
-			_ = c.player.Ping()
-		}
-	}()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	// TODO
-	select {}
+	go c.player.Update(ctx)
+
+	for c.IsOpen() {
+		_, _, err := c.readPacket()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func writeJoinGame(c *conn) error {

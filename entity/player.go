@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"context"
 	"github.com/gitfyu/mable/chat"
 	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/chunk"
@@ -10,6 +11,7 @@ import (
 	"github.com/gitfyu/mable/world/block"
 	"github.com/google/uuid"
 	"sync"
+	"time"
 )
 
 const PlayerEyeHeight = 1.62
@@ -42,6 +44,18 @@ func NewPlayer(name string, uid uuid.UUID, conn PlayerConn) *Player {
 		name:   name,
 		uid:    uid,
 		conn:   conn,
+	}
+}
+
+func (p *Player) Update(ctx context.Context) {
+	ticker := time.NewTicker(time.Second * 5)
+	for {
+		select {
+		case <-ticker.C:
+			_ = p.Ping()
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 
