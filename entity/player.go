@@ -62,7 +62,7 @@ func (p *Player) SetSpawnPos(x, y, z int32) error {
 		buf.WriteInt(z)
 	}
 
-	return p.conn.WritePacket(packet.PlaySpawnPosition, buf)
+	return p.conn.WritePacket(packet.PlayServerSpawnPosition, buf)
 }
 
 // Teleport moves the player to the given position
@@ -93,7 +93,7 @@ func (p *Player) Teleport(pos world.Pos) error {
 		buf.WriteBool(false)
 	}
 
-	return p.conn.WritePacket(packet.PlayPosAndLook, buf)
+	return p.conn.WritePacket(packet.PlayServerPosAndLook, buf)
 }
 
 // TODO currently the actual data being sent is hardcoded, in the future it should be passed as a parameter
@@ -135,7 +135,7 @@ func (p *Player) SendChunkData(chunkX, chunkZ int32) error {
 		buf.WriteUnsignedByte(uint8(biome.Plains))
 	}
 
-	return p.conn.WritePacket(packet.PlayChunkData, buf)
+	return p.conn.WritePacket(packet.PlayServerChunkData, buf)
 }
 
 func (p *Player) Ping() error {
@@ -149,5 +149,5 @@ func (p *Player) Ping() error {
 		buf.WriteInt(0)
 	}
 
-	return p.conn.WritePacket(packet.PlayKeepAlive, buf)
+	return p.conn.WritePacket(packet.PlayServerKeepAlive, buf)
 }

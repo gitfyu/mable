@@ -116,7 +116,7 @@ func (c *conn) Disconnect(reason *chat.Msg) error {
 
 	switch c.state {
 	case protocol.StatePlay:
-		id = packet.PlayDisconnect
+		id = packet.PlayServerDisconnect
 	case protocol.StateLogin:
 		id = packet.LoginDisconnect
 	default:

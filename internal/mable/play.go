@@ -54,5 +54,5 @@ func writeJoinGame(c *conn) error {
 		buf.WriteBool(false)
 	}
 
-	return c.WritePacket(packet.PlayJoinGame, buf)
+	return c.WritePacket(packet.PlayServerJoinGame, buf)
 }

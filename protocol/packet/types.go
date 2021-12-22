@@ -22,10 +22,10 @@ const (
 
 	LoginDisconnect ID = 0x00
 
-	PlayKeepAlive     ID = 0x00
-	PlayJoinGame      ID = 0x01
-	PlaySpawnPosition ID = 0x05
-	PlayPosAndLook    ID = 0x08
-	PlayChunkData     ID = 0x21
-	PlayDisconnect    ID = 0x40
+	PlayServerKeepAlive     ID = 0x00
+	PlayServerJoinGame      ID = 0x01
+	PlayServerSpawnPosition ID = 0x05
+	PlayServerPosAndLook    ID = 0x08
+	PlayServerChunkData     ID = 0x21
+	PlayServerDisconnect    ID = 0x40
 )
