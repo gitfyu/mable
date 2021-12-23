@@ -6,6 +6,7 @@ import (
 	"github.com/gitfyu/mable/protocol/packet"
 )
 
+// handleHandshake processes the handshake packet
 func handleHandshake(c *conn) (protocol.State, uint, error) {
 	id, buf, err := c.readPacket()
 	if err != nil {

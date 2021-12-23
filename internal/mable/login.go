@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// handleLogin processes the login sequence. Currently, it only supports offline ('cracked') mode.
 func handleLogin(c *conn) (string, uuid.UUID, error) {
 	username, err := readLoginStart(c)
 	if err != nil {
