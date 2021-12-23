@@ -20,7 +20,6 @@ type conn struct {
 	serv      *Server
 	conn      net.Conn
 	state     protocol.State
-	version   protocol.Version
 	readBuf   *packet.Buffer
 	reader    *packet.Reader
 	writer    *packet.Writer
@@ -42,7 +41,7 @@ func newConn(s *Server, c net.Conn) *conn {
 }
 
 func (c *conn) handle() error {
-	s, err := handleHandshake(c)
+	s, ver, err := handleHandshake(c)
 	if err != nil {
 		return err
 	}
@@ -51,6 +50,10 @@ func (c *conn) handle() error {
 	case protocol.StateStatus:
 		return handleStatus(c)
 	case protocol.StateLogin:
+		if ver != 47 {
+			return c.Disconnect(&chat.Msg{Text: "Please use Minecraft 1.8."})
+		}
+
 		c.state = s
 		username, id, err := handleLogin(c)
 		if err != nil {
@@ -90,10 +93,6 @@ func (c *conn) readPacket() (packet.ID, *packet.Buffer, error) {
 	c.readBuf.Reset()
 	id, err := c.reader.ReadPacket(c.readBuf)
 	return id, c.readBuf, err
-}
-
-func (c *conn) Version() protocol.Version {
-	return c.version
 }
 
 // WritePacket writes a single packet to the client. This function may be called concurrently.

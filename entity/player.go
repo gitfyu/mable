@@ -19,8 +19,6 @@ const PlayerEyeHeight = 1.62
 
 // PlayerConn represents a player's network connection
 type PlayerConn interface {
-	// Version returns the protocol.Version of the player's connection
-	Version() protocol.Version
 	// WritePacket sends a packet to the player
 	WritePacket(id packet.ID, buf *packet.Buffer) error
 	// Disconnect kicks the player from the server
@@ -85,13 +83,8 @@ func (p *Player) Teleport(pos world.Pos) error {
 	buf.WriteFloat(pos.Yaw)
 	buf.WriteFloat(pos.Pitch)
 
-	if p.conn.Version() == protocol.Version_1_8 {
-		// flags indicating all values are absolute
-		buf.WriteSignedByte(0)
-	} else {
-		// on ground, useless
-		buf.WriteBool(false)
-	}
+	// flags indicating all values are absolute
+	buf.WriteSignedByte(0)
 
 	p.worldPosLock.Lock()
 	defer p.worldPosLock.Unlock()
@@ -148,11 +141,7 @@ func (p *Player) Ping() error {
 	defer packet.ReleaseBuffer(buf)
 
 	// TODO currently the same arbitrary ID is sent every time, since the server has no use for the response (yet)
-	if p.conn.Version() == protocol.Version_1_8 {
-		buf.WriteVarInt(0)
-	} else {
-		buf.WriteInt(0)
-	}
+	buf.WriteVarInt(0)
 
 	return p.conn.WritePacket(packet.PlayServerKeepAlive, buf)
 }

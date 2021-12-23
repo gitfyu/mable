@@ -2,17 +2,11 @@ package mable
 
 import (
 	"errors"
-	"github.com/gitfyu/mable/chat"
-	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/packet"
 	"github.com/google/uuid"
 )
 
 func handleLogin(c *conn) (string, uuid.UUID, error) {
-	if c.version != protocol.Version_1_7_6 && c.version != protocol.Version_1_8 {
-		return "", uuid.Nil, cancelLogin(c, "Please use Minecraft 1.7.6-1.8.9!")
-	}
-
 	username, err := readLoginStart(c)
 	if err != nil {
 		return "", uuid.Nil, err
@@ -22,14 +16,6 @@ func handleLogin(c *conn) (string, uuid.UUID, error) {
 
 	id := generateOfflineUUID(username)
 	return username, id, writeLoginSuccess(c, username, id)
-}
-
-func cancelLogin(c *conn, reason string) error {
-	msg := chat.Msg{
-		Text:  reason,
-		Color: chat.ColorRed,
-	}
-	return c.Disconnect(&msg)
 }
 
 func readLoginStart(c *conn) (string, error) {

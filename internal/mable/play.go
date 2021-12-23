@@ -3,7 +3,6 @@ package mable
 import (
 	"context"
 	"github.com/gitfyu/mable/entity"
-	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/packet"
 	"github.com/gitfyu/mable/world"
 	"github.com/google/uuid"
@@ -52,11 +51,8 @@ func writeJoinGame(c *conn, id entity.ID) error {
 	buf.WriteUnsignedByte(0)
 	// level type
 	buf.WriteString("flat")
-
-	if c.version == protocol.Version_1_8 {
-		// disable reduced debug info
-		buf.WriteBool(false)
-	}
+	// disable reduced debug info
+	buf.WriteBool(false)
 
 	return c.WritePacket(packet.PlayServerJoinGame, buf)
 }
