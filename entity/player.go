@@ -55,6 +55,7 @@ func (p *Player) Update(ctx context.Context) {
 		case <-ticker.C:
 			_ = p.Ping()
 		case <-ctx.Done():
+			ticker.Stop()
 			return
 		}
 	}
