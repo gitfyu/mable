@@ -28,14 +28,13 @@ type PlayerConn interface {
 // Player represents a player entity
 type Player struct {
 	Entity
-	name         string
-	uid          uuid.UUID
-	conn         PlayerConn
-	world        *world.World
-	worldLeft    *sync.Cond
-	pos          world.Pos
-	worldPosLock sync.RWMutex
-	pings        chan int32
+	name      string
+	uid       uuid.UUID
+	conn      PlayerConn
+	pos       world.Pos
+	posLock   sync.RWMutex
+	worldLeft *sync.Cond
+	pings     chan int32
 }
 
 // NewPlayer constructs a new player
@@ -46,34 +45,60 @@ func NewPlayer(name string, uid uuid.UUID, conn PlayerConn) *Player {
 		uid:    uid,
 		conn:   conn,
 	}
-	p.worldLeft = sync.NewCond(&p.worldPosLock)
+	p.worldLeft = sync.NewCond(&p.posLock)
 	return p
 }
 
 // Destroy should be called to clean up resources when this Player is no longer needed. The Player should not be used
 // again afterwards.
 func (p *Player) Destroy() {
-	p.SetWorld(nil)
+	p.posLock.Lock()
+	defer p.posLock.Unlock()
+
+	p.leaveWorld()
 }
 
-// SetWorld adds the player to the specified world. If the world is nil, this function will only remove the player from
-// their current world.
-func (p *Player) SetWorld(w *world.World) {
-	id := world.SubscriberID(p.GetEntityID())
+// SetPos changes the player' position
+func (p *Player) SetPos(pos world.Pos) error {
+	p.posLock.Lock()
+	defer p.posLock.Unlock()
 
-	p.worldPosLock.Lock()
-	defer p.worldPosLock.Unlock()
+	if p.pos.World != pos.World {
+		p.leaveWorld()
+		p.enterWorld(pos.World)
+	}
 
-	if p.world != nil {
-		p.world.Unsubscribe(id)
+	p.pos = pos
+
+	buf := packet.AcquireBuffer()
+	defer packet.ReleaseBuffer(buf)
+
+	buf.WriteDouble(p.pos.X)
+	buf.WriteDouble(p.pos.Y + PlayerEyeHeight)
+	buf.WriteDouble(p.pos.Z)
+	buf.WriteFloat(p.pos.Yaw)
+	buf.WriteFloat(p.pos.Pitch)
+
+	// flags indicating all values are absolute
+	buf.WriteSignedByte(0)
+
+	return p.conn.WritePacket(packet.PlayServerPosAndLook, buf)
+}
+
+// leaveWorld removes the player from their current world, if they are in one. The calling goroutine MUST hold the
+// Player.posLock!
+func (p *Player) leaveWorld() {
+	if p.pos.World != nil {
+		p.pos.World.Unsubscribe(world.SubscriberID(p.GetEntityID()))
 		// wait for all updates from previous world to be processed
 		p.worldLeft.Wait()
 	}
+}
 
-	p.world = w
-
+// enterWorld adds a player to a new world. The calling goroutine MUST hold the Player.posLock!
+func (p *Player) enterWorld(w *world.World) {
 	if w != nil {
-		ch := w.Subscribe(id)
+		ch := w.Subscribe(world.SubscriberID(p.GetEntityID()))
 		go func() {
 			for msg := range ch {
 				log.Debug().
@@ -100,28 +125,6 @@ func (p *Player) Update(ctx context.Context) {
 			return
 		}
 	}
-}
-
-// Teleport moves the player to the given position
-func (p *Player) Teleport(pos world.Pos) error {
-	buf := packet.AcquireBuffer()
-	defer packet.ReleaseBuffer(buf)
-
-	buf.WriteDouble(pos.X)
-	buf.WriteDouble(pos.Y + PlayerEyeHeight)
-	buf.WriteDouble(pos.Z)
-	buf.WriteFloat(pos.Yaw)
-	buf.WriteFloat(pos.Pitch)
-
-	// flags indicating all values are absolute
-	buf.WriteSignedByte(0)
-
-	p.worldPosLock.Lock()
-	defer p.worldPosLock.Unlock()
-
-	p.pos = pos
-
-	return p.conn.WritePacket(packet.PlayServerPosAndLook, buf)
 }
 
 // TODO currently the actual data being sent is hardcoded, in the future it should be passed as a parameter

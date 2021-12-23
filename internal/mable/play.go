@@ -13,15 +13,20 @@ func handlePlay(c *conn, username string, id uuid.UUID) error {
 	p := entity.NewPlayer(username, id, c)
 	defer p.Destroy()
 
-	p.SetWorld(world.Default)
-
 	if err := writeJoinGame(c, p.GetEntityID()); err != nil {
 		return err
 	}
 	if err := p.SendChunkData(0, 0); err != nil {
 		return err
 	}
-	if err := p.Teleport(world.NewPos(8, 16, 8, 0, 0)); err != nil {
+
+	err := p.SetPos(world.Pos{
+		World: world.Default,
+		X:     8,
+		Y:     16,
+		Z:     8,
+	})
+	if err != nil {
 		return err
 	}
 
