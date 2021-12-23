@@ -27,7 +27,7 @@ type PlayerConn interface {
 	Disconnect(reason *chat.Msg) error
 }
 
-// Player represents a player entity, which could be a real/human player but also an NPC
+// Player represents a player entity
 type Player struct {
 	Entity
 	name         string
@@ -39,7 +39,7 @@ type Player struct {
 	pings        chan int32
 }
 
-// NewPlayer constructs a new player, conn may be set to nil for NPCs
+// NewPlayer constructs a new player
 func NewPlayer(name string, uid uuid.UUID, conn PlayerConn, w *world.World) *Player {
 	return &Player{
 		Entity: NewEntity(),
@@ -76,10 +76,6 @@ func (p *Player) Update(ctx context.Context) {
 
 // SetSpawnPos sets the player's spawn-point
 func (p *Player) SetSpawnPos(x, y, z int32) error {
-	if p.conn == nil {
-		return nil
-	}
-
 	buf := packet.AcquireBuffer()
 	defer packet.ReleaseBuffer(buf)
 
@@ -96,15 +92,6 @@ func (p *Player) SetSpawnPos(x, y, z int32) error {
 
 // Teleport moves the player to the given position
 func (p *Player) Teleport(pos world.Pos) error {
-	p.worldPosLock.Lock()
-	defer p.worldPosLock.Unlock()
-
-	p.pos = pos
-
-	if p.conn == nil {
-		return nil
-	}
-
 	buf := packet.AcquireBuffer()
 	defer packet.ReleaseBuffer(buf)
 
@@ -121,6 +108,11 @@ func (p *Player) Teleport(pos world.Pos) error {
 		// on ground, useless
 		buf.WriteBool(false)
 	}
+
+	p.worldPosLock.Lock()
+	defer p.worldPosLock.Unlock()
+
+	p.pos = pos
 
 	return p.conn.WritePacket(packet.PlayServerPosAndLook, buf)
 }
