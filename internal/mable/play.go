@@ -10,7 +10,10 @@ import (
 
 // handlePlay creates the player and handles all packets until the connection is closed
 func handlePlay(c *conn, username string, id uuid.UUID) error {
-	p := entity.NewPlayer(username, id, c, world.Default)
+	p := entity.NewPlayer(username, id, c)
+	defer p.Destroy()
+
+	p.SetWorld(world.Default)
 
 	if err := writeJoinGame(c, p.GetEntityID()); err != nil {
 		return err

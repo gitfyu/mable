@@ -4,7 +4,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"math/rand"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -19,37 +18,47 @@ func BroadcastDefault() {
 	}
 }
 
+const (
+	updatesBufferSize = 10
+)
+
+type SubscriberID int32
+
 type World struct {
-	listeners     map[uint32]chan<- interface{}
+	listeners     map[SubscriberID]chan<- interface{}
 	listenersLock sync.RWMutex
 }
 
 func NewWorld() *World {
 	return &World{
-		listeners: make(map[uint32]chan<- interface{}),
+		listeners: make(map[SubscriberID]chan<- interface{}),
 	}
 }
 
-var subIdCounter uint32
-
-// Subscribe subscribes the provided channel to receive world updates. This function returns a unique ID for this
-// subscription, which can be passed to Unsubscribe
-func (w *World) Subscribe(ch chan<- interface{}) uint32 {
+// Subscribe creates a new subscription for the specified SubscribedID. It returns a channel that will receive the
+// updates. The SubscriberID provided must be unique, it is not allowed to call this function multiple times with the
+// same SubscriberID unless it has been unregistered using Unsubscribe first.
+func (w *World) Subscribe(id SubscriberID) <-chan interface{} {
 	w.listenersLock.Lock()
 	defer w.listenersLock.Unlock()
 
-	id := atomic.AddUint32(&subIdCounter, 1)
+	ch := make(chan interface{}, updatesBufferSize)
 	w.listeners[id] = ch
 
-	return id
+	return ch
 }
 
-// Unsubscribe cancels a previous subscription. You should call this function using the ID returned from Subscribe.
-func (w *World) Unsubscribe(id uint32) {
+// Unsubscribe cancels a previous subscription if it exists, otherwise it does nothing. The channel associated with the
+// subscription will be closed.
+func (w *World) Unsubscribe(id SubscriberID) {
 	w.listenersLock.Lock()
 	defer w.listenersLock.Unlock()
 
-	delete(w.listeners, id)
+	ch, ok := w.listeners[id]
+	if ok {
+		close(ch)
+		delete(w.listeners, id)
+	}
 }
 
 // Broadcast broadcasts a message to all subscribers of this world

@@ -32,19 +32,58 @@ type Player struct {
 	uid          uuid.UUID
 	conn         PlayerConn
 	world        *world.World
+	worldLeft    *sync.Cond
 	pos          world.Pos
 	worldPosLock sync.RWMutex
 	pings        chan int32
 }
 
 // NewPlayer constructs a new player
-func NewPlayer(name string, uid uuid.UUID, conn PlayerConn, w *world.World) *Player {
-	return &Player{
+func NewPlayer(name string, uid uuid.UUID, conn PlayerConn) *Player {
+	p := &Player{
 		Entity: NewEntity(),
 		name:   name,
 		uid:    uid,
 		conn:   conn,
-		world:  w,
+	}
+	p.worldLeft = sync.NewCond(&p.worldPosLock)
+	return p
+}
+
+// Destroy should be called to clean up resources when this Player is no longer needed. The Player should not be used
+// again afterwards.
+func (p *Player) Destroy() {
+	p.SetWorld(nil)
+}
+
+// SetWorld adds the player to the specified world. If the world is nil, this function will only remove the player from
+// their current world.
+func (p *Player) SetWorld(w *world.World) {
+	id := world.SubscriberID(p.GetEntityID())
+
+	p.worldPosLock.Lock()
+	defer p.worldPosLock.Unlock()
+
+	if p.world != nil {
+		p.world.Unsubscribe(id)
+		// wait for all updates from previous world to be processed
+		p.worldLeft.Wait()
+	}
+
+	p.world = w
+
+	if w != nil {
+		ch := w.Subscribe(id)
+		go func() {
+			for msg := range ch {
+				log.Debug().
+					Str("receiver", p.name).
+					Interface("msg", msg).
+					Msg("World update received")
+			}
+			// signal that all updates have been processed
+			p.worldLeft.Signal()
+		}()
 	}
 }
 
@@ -53,17 +92,8 @@ func (p *Player) Update(ctx context.Context) {
 	ticker := time.NewTicker(time.Second * 5)
 	defer ticker.Stop()
 
-	worldUpdates := make(chan interface{}, 10)
-	sub := p.world.Subscribe(worldUpdates)
-	defer p.world.Unsubscribe(sub)
-
 	for {
 		select {
-		case msg := <-worldUpdates:
-			log.Debug().
-				Str("receiver", p.name).
-				Interface("msg", msg).
-				Msg("World update received")
 		case <-ticker.C:
 			_ = p.Ping()
 		case <-ctx.Done():
