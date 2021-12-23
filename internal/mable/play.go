@@ -18,9 +18,6 @@ func handlePlay(c *conn, username string, id uuid.UUID) error {
 	if err := p.SendChunkData(0, 0); err != nil {
 		return err
 	}
-	if err := p.SetSpawnPos(0, 0, 0); err != nil {
-		return err
-	}
 	if err := p.Teleport(world.NewPos(8, 16, 8, 0, 0)); err != nil {
 		return err
 	}

@@ -74,22 +74,6 @@ func (p *Player) Update(ctx context.Context) {
 	}
 }
 
-// SetSpawnPos sets the player's spawn-point
-func (p *Player) SetSpawnPos(x, y, z int32) error {
-	buf := packet.AcquireBuffer()
-	defer packet.ReleaseBuffer(buf)
-
-	if p.conn.Version() == protocol.Version_1_8 {
-		buf.WritePosition(x, y, z)
-	} else {
-		buf.WriteInt(x)
-		buf.WriteInt(y)
-		buf.WriteInt(z)
-	}
-
-	return p.conn.WritePacket(packet.PlayServerSpawnPosition, buf)
-}
-
 // Teleport moves the player to the given position
 func (p *Player) Teleport(pos world.Pos) error {
 	buf := packet.AcquireBuffer()
