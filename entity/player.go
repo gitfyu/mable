@@ -55,6 +55,9 @@ func NewPlayer(name string, uid uuid.UUID, conn PlayerConn, w *world.World) *Pla
 
 // Close releases the resources associated with the player
 func (p *Player) Close() error {
+	p.worldPosLock.Lock()
+	defer p.worldPosLock.Unlock()
+
 	p.world.Unsubscribe(p)
 	return nil
 }
