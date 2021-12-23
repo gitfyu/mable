@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gitfyu/mable/chat"
-	"github.com/gitfyu/mable/entity"
 	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/packet"
 	"net"
@@ -22,7 +21,6 @@ type conn struct {
 	conn      net.Conn
 	state     protocol.State
 	version   protocol.Version
-	player    *entity.Player
 	readBuf   *packet.Buffer
 	reader    *packet.Reader
 	writer    *packet.Writer
@@ -54,12 +52,13 @@ func (c *conn) handle() error {
 		return handleStatus(c)
 	case protocol.StateLogin:
 		c.state = s
-		if err := handleLogin(c); err != nil {
+		username, id, err := handleLogin(c)
+		if err != nil {
 			return err
 		}
 
 		c.state = protocol.StatePlay
-		return handlePlay(c)
+		return handlePlay(c, username, id)
 	default:
 		return errors.New("unknown state")
 	}

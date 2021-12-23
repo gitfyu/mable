@@ -2,29 +2,33 @@ package mable
 
 import (
 	"context"
+	"github.com/gitfyu/mable/entity"
 	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/packet"
 	"github.com/gitfyu/mable/world"
+	"github.com/google/uuid"
 )
 
-func handlePlay(c *conn) error {
-	if err := writeJoinGame(c); err != nil {
+func handlePlay(c *conn, username string, id uuid.UUID) error {
+	p := entity.NewPlayer(username, id, c, world.Default)
+
+	if err := writeJoinGame(c, p.GetEntityID()); err != nil {
 		return err
 	}
-	if err := c.player.SendChunkData(0, 0); err != nil {
+	if err := p.SendChunkData(0, 0); err != nil {
 		return err
 	}
-	if err := c.player.SetSpawnPos(0, 0, 0); err != nil {
+	if err := p.SetSpawnPos(0, 0, 0); err != nil {
 		return err
 	}
-	if err := c.player.Teleport(world.NewPos(8, 16, 8, 0, 0)); err != nil {
+	if err := p.Teleport(world.NewPos(8, 16, 8, 0, 0)); err != nil {
 		return err
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	go c.player.Update(ctx)
+	go p.Update(ctx)
 
 	for c.IsOpen() {
 		_, _, err := c.readPacket()
@@ -36,11 +40,11 @@ func handlePlay(c *conn) error {
 	return nil
 }
 
-func writeJoinGame(c *conn) error {
+func writeJoinGame(c *conn, id entity.ID) error {
 	buf := packet.AcquireBuffer()
 	defer packet.ReleaseBuffer(buf)
 
-	buf.WriteInt(int32(c.player.GetEntityID()))
+	buf.WriteInt(int32(id))
 	// creative gamemode
 	buf.WriteUnsignedByte(uint8(1))
 	// overworld dimension

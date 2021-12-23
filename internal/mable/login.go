@@ -3,28 +3,25 @@ package mable
 import (
 	"errors"
 	"github.com/gitfyu/mable/chat"
-	"github.com/gitfyu/mable/entity"
 	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/packet"
-	"github.com/gitfyu/mable/world"
 	"github.com/google/uuid"
 )
 
-func handleLogin(c *conn) error {
+func handleLogin(c *conn) (string, uuid.UUID, error) {
 	if c.version != protocol.Version_1_7_6 && c.version != protocol.Version_1_8 {
-		return cancelLogin(c, "Please use Minecraft 1.7.6-1.8.9!")
+		return "", uuid.Nil, cancelLogin(c, "Please use Minecraft 1.7.6-1.8.9!")
 	}
 
 	username, err := readLoginStart(c)
 	if err != nil {
-		return err
+		return "", uuid.Nil, err
 	}
 
 	// TODO implement authenticated login
 
 	id := generateOfflineUUID(username)
-	c.player = entity.NewPlayer(username, id, c, world.Default)
-	return writeLoginSuccess(c, username, id)
+	return username, id, writeLoginSuccess(c, username, id)
 }
 
 func cancelLogin(c *conn, reason string) error {
