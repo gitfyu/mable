@@ -2,7 +2,6 @@ package entity
 
 import (
 	"context"
-	"fmt"
 	"github.com/gitfyu/mable/chat"
 	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/chunk"
@@ -42,43 +41,12 @@ type Player struct {
 
 // NewPlayer constructs a new player, conn may be set to nil for NPCs
 func NewPlayer(name string, uid uuid.UUID, conn PlayerConn, w *world.World) *Player {
-	p := &Player{
+	return &Player{
 		Entity: NewEntity(),
 		name:   name,
 		uid:    uid,
 		conn:   conn,
 		world:  w,
-	}
-	w.Subscribe(p)
-	return p
-}
-
-// Close releases the resources associated with the player
-func (p *Player) Close() error {
-	p.worldPosLock.Lock()
-	defer p.worldPosLock.Unlock()
-
-	p.world.Unsubscribe(p)
-	return nil
-}
-
-func (p *Player) OnWorldUpdate(v int) {
-	buf := packet.AcquireBuffer()
-	defer packet.ReleaseBuffer(buf)
-
-	msg := chat.Msg{
-		Text: fmt.Sprintf("Update: %d", v),
-	}
-
-	if err := buf.WriteMsg(&msg); err != nil {
-		log.Err(err).Msg("Writing msg")
-		return
-	}
-
-	buf.WriteSignedByte(0)
-
-	if err := p.conn.WritePacket(packet.PlayServerChatMessage, buf); err != nil {
-		log.Err(err).Msg("Sending chat")
 	}
 }
 
@@ -87,8 +55,17 @@ func (p *Player) Update(ctx context.Context) {
 	ticker := time.NewTicker(time.Second * 5)
 	defer ticker.Stop()
 
+	worldUpdates := make(chan interface{}, 10)
+	sub := p.world.Subscribe(worldUpdates)
+	defer p.world.Unsubscribe(sub)
+
 	for {
 		select {
+		case msg := <-worldUpdates:
+			log.Debug().
+				Str("receiver", p.name).
+				Interface("msg", msg).
+				Msg("World update received")
 		case <-ticker.C:
 			_ = p.Ping()
 		case <-ctx.Done():

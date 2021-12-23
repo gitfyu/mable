@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"github.com/gitfyu/mable/internal/mable"
+	"github.com/gitfyu/mable/world"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"net"
@@ -68,6 +69,8 @@ func main() {
 		log.Info().Msg("Shutting down")
 		srv.Close()
 	}()
+
+	go world.BroadcastDefault()
 
 	if err := srv.ListenAndServe(); !errors.Is(err, net.ErrClosed) {
 		log.Fatal().Err(err).Msg("Server execution failed")
