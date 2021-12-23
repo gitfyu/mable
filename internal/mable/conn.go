@@ -84,7 +84,7 @@ func (c *conn) IsOpen() bool {
 }
 
 func (c *conn) readPacket() (packet.ID, *packet.Buffer, error) {
-	if err := c.conn.SetReadDeadline(time.Now().Add(time.Second * time.Duration(c.serv.cfg.ReadTimeout))); err != nil {
+	if err := c.conn.SetReadDeadline(time.Now().Add(time.Second * time.Duration(c.serv.cfg.Timeout))); err != nil {
 		return 0, nil, err
 	}
 
@@ -101,6 +101,10 @@ func (c *conn) Version() protocol.Version {
 func (c *conn) WritePacket(id packet.ID, buf *packet.Buffer) error {
 	c.writeLock.Lock()
 	defer c.writeLock.Unlock()
+
+	if err := c.conn.SetWriteDeadline(time.Now().Add(time.Second * time.Duration(c.serv.cfg.Timeout))); err != nil {
+		return err
+	}
 
 	return c.writer.WritePacket(id, buf)
 }
