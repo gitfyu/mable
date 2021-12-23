@@ -33,7 +33,7 @@ func handlePlay(c *conn, username string, id uuid.UUID) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	go p.Update(ctx)
+	go p.KeepAlive(ctx)
 
 	for c.IsOpen() {
 		_, _, err := c.readPacket()

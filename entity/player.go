@@ -112,8 +112,8 @@ func (p *Player) enterWorld(w *world.World) {
 	}
 }
 
-// Update will keep pinging the player until the context is cancelled
-func (p *Player) Update(ctx context.Context) {
+// KeepAlive will keep pinging the player until the context is cancelled
+func (p *Player) KeepAlive(ctx context.Context) {
 	ticker := time.NewTicker(time.Second * 5)
 	defer ticker.Stop()
 
