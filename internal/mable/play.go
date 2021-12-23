@@ -8,6 +8,8 @@ import (
 )
 
 func handlePlay(c *conn) error {
+	defer c.player.Close()
+
 	if err := writeJoinGame(c); err != nil {
 		return err
 	}

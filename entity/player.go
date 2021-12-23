@@ -2,6 +2,7 @@ package entity
 
 import (
 	"context"
+	"fmt"
 	"github.com/gitfyu/mable/chat"
 	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/chunk"
@@ -10,6 +11,7 @@ import (
 	"github.com/gitfyu/mable/world/biome"
 	"github.com/gitfyu/mable/world/block"
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 	"sync"
 	"time"
 )
@@ -29,21 +31,51 @@ type PlayerConn interface {
 // Player represents a player entity, which could be a real/human player but also an NPC
 type Player struct {
 	Entity
-	name    string
-	uid     uuid.UUID
-	conn    PlayerConn
-	pos     world.Pos
-	posLock sync.RWMutex
-	pings   chan int32
+	name         string
+	uid          uuid.UUID
+	conn         PlayerConn
+	world        *world.World
+	pos          world.Pos
+	worldPosLock sync.RWMutex
+	pings        chan int32
 }
 
 // NewPlayer constructs a new player, conn may be set to nil for NPCs
-func NewPlayer(name string, uid uuid.UUID, conn PlayerConn) *Player {
-	return &Player{
+func NewPlayer(name string, uid uuid.UUID, conn PlayerConn, w *world.World) *Player {
+	p := &Player{
 		Entity: NewEntity(),
 		name:   name,
 		uid:    uid,
 		conn:   conn,
+		world:  w,
+	}
+	w.Subscribe(p)
+	return p
+}
+
+// Close releases the resources associated with the player
+func (p *Player) Close() error {
+	p.world.Unsubscribe(p)
+	return nil
+}
+
+func (p *Player) OnWorldUpdate(v int) {
+	buf := packet.AcquireBuffer()
+	defer packet.ReleaseBuffer(buf)
+
+	msg := chat.Msg{
+		Text: fmt.Sprintf("Update: %d", v),
+	}
+
+	if err := buf.WriteMsg(&msg); err != nil {
+		log.Err(err).Msg("Writing msg")
+		return
+	}
+
+	buf.WriteSignedByte(0)
+
+	if err := p.conn.WritePacket(packet.PlayServerChatMessage, buf); err != nil {
+		log.Err(err).Msg("Sending chat")
 	}
 }
 
@@ -84,8 +116,8 @@ func (p *Player) SetSpawnPos(x, y, z int32) error {
 
 // Teleport moves the player to the given position
 func (p *Player) Teleport(pos world.Pos) error {
-	p.posLock.Lock()
-	defer p.posLock.Unlock()
+	p.worldPosLock.Lock()
+	defer p.worldPosLock.Unlock()
 
 	p.pos = pos
 

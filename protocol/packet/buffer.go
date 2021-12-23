@@ -3,7 +3,9 @@ package packet
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
+	"github.com/gitfyu/mable/chat"
 	"github.com/gitfyu/mable/protocol"
 	"github.com/google/uuid"
 	"math"
@@ -166,6 +168,16 @@ func (b *Buffer) ReadString() (string, error) {
 func (b *Buffer) WriteUUID(uuid uuid.UUID) {
 	buf, _ := uuid.MarshalBinary()
 	b.buf.Write(buf)
+}
+
+func (b *Buffer) WriteMsg(msg *chat.Msg) error {
+	str, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+
+	b.WriteStringFromBytes(str)
+	return nil
 }
 
 // Write writes the given data to the buffer. It never returns an error.

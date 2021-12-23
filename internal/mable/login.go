@@ -6,6 +6,7 @@ import (
 	"github.com/gitfyu/mable/entity"
 	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/packet"
+	"github.com/gitfyu/mable/world"
 	"github.com/google/uuid"
 )
 
@@ -22,7 +23,7 @@ func handleLogin(c *conn) error {
 	// TODO implement authenticated login
 
 	id := generateOfflineUUID(username)
-	c.player = entity.NewPlayer(username, id, c)
+	c.player = entity.NewPlayer(username, id, c, world.Default)
 	return writeLoginSuccess(c, username, id)
 }
 
