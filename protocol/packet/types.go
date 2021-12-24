@@ -12,6 +12,8 @@ const (
 
 	LoginStart   ID = 0x00
 	LoginSuccess ID = 0x02
+
+	PlayClientKeepAlive ID = 0x00
 )
 
 // Server -> Client

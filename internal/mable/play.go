@@ -5,6 +5,7 @@ import (
 	"github.com/gitfyu/mable/protocol/packet"
 	"github.com/gitfyu/mable/world"
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 )
 
 // handlePlay creates the player and handles all packets until the connection is closed
@@ -29,10 +30,28 @@ func handlePlay(c *conn, username string, id uuid.UUID) error {
 		return err
 	}
 
+	handlers := map[packet.ID]func(buffer *packet.Buffer) error{
+		packet.PlayClientKeepAlive: func(data *packet.Buffer) error {
+			i, err := data.ReadVarInt()
+			if err != nil {
+				return err
+			}
+
+			log.Debug().Int("id", int(i)).Msg("KeepAlive")
+			return nil
+		},
+	}
+
 	for c.IsOpen() {
-		_, _, err := c.readPacket()
+		id, data, err := c.readPacket()
 		if err != nil {
 			return err
+		}
+		
+		if h, ok := handlers[id]; ok {
+			if err := h(data); err != nil {
+				return err
+			}
 		}
 	}
 
