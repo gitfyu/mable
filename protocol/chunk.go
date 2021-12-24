@@ -1,11 +1,11 @@
-package chunk
+package protocol
 
 import (
 	"github.com/gitfyu/mable/world/block"
 )
 
-// TotalDataSize returns the number of bytes that all the chunk data will consist of for the given number of sections
-func TotalDataSize(sectionCount int) int {
+// ChunkDataSize returns the number of bytes that all the chunk data will consist of for the given number of sections
+func ChunkDataSize(sectionCount int) int {
 	blockDataSize := sectionCount * 2 * 16 * 16 * 16
 	blockLightSize := sectionCount * 16 * 16 * 16 / 2
 	skyLightSize := sectionCount * 16 * 16 * 16 / 2

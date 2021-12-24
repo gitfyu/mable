@@ -3,7 +3,6 @@ package entity
 import (
 	"github.com/gitfyu/mable/chat"
 	"github.com/gitfyu/mable/protocol"
-	"github.com/gitfyu/mable/protocol/chunk"
 	"github.com/gitfyu/mable/protocol/packet"
 	"github.com/gitfyu/mable/world"
 	"github.com/gitfyu/mable/world/biome"
@@ -40,10 +39,11 @@ type Player struct {
 // NewPlayer constructs a new player
 func NewPlayer(name string, uid uuid.UUID, conn PlayerConn) *Player {
 	p := &Player{
-		Entity: NewEntity(),
-		name:   name,
-		uid:    uid,
-		conn:   conn,
+		Entity:    NewEntity(),
+		name:      name,
+		uid:       uid,
+		conn:      conn,
+		destroyed: make(chan struct{}),
 	}
 	p.worldLeft = sync.NewCond(&p.posLock)
 
@@ -144,25 +144,25 @@ func (p *Player) SendChunkData(chunkX, chunkZ int32) error {
 
 	// mask, first bit set means only the lowest section is sent
 	buf.WriteUnsignedShort(1)
-	buf.WriteVarInt(protocol.VarInt(chunk.TotalDataSize(1)))
+	buf.WriteVarInt(protocol.VarInt(protocol.ChunkDataSize(1)))
 
 	// blocks
 	for y := 0; y < 16; y++ {
 		for z := 0; z < 16; z++ {
 			for x := 0; x < 16; x++ {
-				buf.WriteUnsignedShortLittleEndian(chunk.EncodeBlockData(block.Stone, 0))
+				buf.WriteUnsignedShortLittleEndian(protocol.EncodeBlockData(block.Stone, 0))
 			}
 		}
 	}
 
 	// block light
-	for i := 0; i < chunk.LightDataSize; i++ {
-		buf.WriteUnsignedByte(chunk.FullBright<<4 | chunk.FullBright)
+	for i := 0; i < protocol.LightDataSize; i++ {
+		buf.WriteUnsignedByte(protocol.FullBright<<4 | protocol.FullBright)
 	}
 
 	// skylight
-	for i := 0; i < chunk.LightDataSize; i++ {
-		buf.WriteUnsignedByte(chunk.FullBright<<4 | chunk.FullBright)
+	for i := 0; i < protocol.LightDataSize; i++ {
+		buf.WriteUnsignedByte(protocol.FullBright<<4 | protocol.FullBright)
 	}
 
 	// biomes

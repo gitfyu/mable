@@ -1,4 +1,4 @@
-package chunk
+package protocol
 
 const (
 	// LightDataSize is the size of the array containing lighting data, referred to as NibbleArray in vanilla
