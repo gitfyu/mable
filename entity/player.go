@@ -116,7 +116,7 @@ func (p *Player) enterWorld(w *world.World) {
 	}
 }
 
-// keepAlive will keep pinging the player until the context is cancelled
+// keepAlive will frequently ping the player to prevent them from disconnecting
 func (p *Player) keepAlive() {
 	ticker := time.NewTicker(time.Second * 5)
 	defer ticker.Stop()
