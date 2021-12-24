@@ -1,7 +1,6 @@
 package mable
 
 import (
-	"context"
 	"github.com/gitfyu/mable/entity"
 	"github.com/gitfyu/mable/protocol/packet"
 	"github.com/gitfyu/mable/world"
@@ -29,11 +28,6 @@ func handlePlay(c *conn, username string, id uuid.UUID) error {
 	if err != nil {
 		return err
 	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	go p.KeepAlive(ctx)
 
 	for c.IsOpen() {
 		_, _, err := c.readPacket()

@@ -1,7 +1,6 @@
 package entity
 
 import (
-	"context"
 	"github.com/gitfyu/mable/chat"
 	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/chunk"
@@ -35,6 +34,7 @@ type Player struct {
 	posLock   sync.RWMutex
 	worldLeft *sync.Cond
 	pings     chan int32
+	destroyed chan struct{}
 }
 
 // NewPlayer constructs a new player
@@ -46,6 +46,9 @@ func NewPlayer(name string, uid uuid.UUID, conn PlayerConn) *Player {
 		conn:   conn,
 	}
 	p.worldLeft = sync.NewCond(&p.posLock)
+
+	go p.keepAlive()
+
 	return p
 }
 
@@ -56,6 +59,7 @@ func (p *Player) Destroy() {
 	defer p.posLock.Unlock()
 
 	p.leaveWorld()
+	close(p.destroyed)
 }
 
 // SetPos changes the player' position
@@ -112,8 +116,8 @@ func (p *Player) enterWorld(w *world.World) {
 	}
 }
 
-// KeepAlive will keep pinging the player until the context is cancelled
-func (p *Player) KeepAlive(ctx context.Context) {
+// keepAlive will keep pinging the player until the context is cancelled
+func (p *Player) keepAlive() {
 	ticker := time.NewTicker(time.Second * 5)
 	defer ticker.Stop()
 
@@ -121,7 +125,7 @@ func (p *Player) KeepAlive(ctx context.Context) {
 		select {
 		case <-ticker.C:
 			_ = p.Ping()
-		case <-ctx.Done():
+		case <-p.destroyed:
 			return
 		}
 	}
