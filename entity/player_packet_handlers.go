@@ -19,6 +19,7 @@ func (p *Player) HandlePacket(id packet.ID, data *packet.Buffer) error {
 	}
 }
 
+// handleKeepAlive handles packet.PlayClientKeepAlive
 func (p *Player) handleKeepAlive(data *packet.Buffer) error {
 	i, err := data.ReadVarInt()
 	if err != nil {
