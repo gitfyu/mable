@@ -62,6 +62,14 @@ func (p *Player) Destroy() {
 	close(p.destroyed)
 }
 
+// setCoords updates the player's coordinates, without sending an update to the client
+func (p *Player) setCoords(x, y, z float64) {
+	p.posLock.Lock()
+	defer p.posLock.Unlock()
+
+	p.pos.X, p.pos.Y, p.pos.Z = x, y, z
+}
+
 // SetPos changes the player' position
 func (p *Player) SetPos(pos world.Pos) error {
 	p.posLock.Lock()

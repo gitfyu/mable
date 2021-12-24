@@ -116,6 +116,15 @@ func (b *Buffer) WriteLong(v int64) {
 	b.WriteUnsignedLong(uint64(v))
 }
 
+func (b *Buffer) ReadUnsignedLong() (uint64, error) {
+	data := make([]byte, 8)
+	if _, err := b.buf.Read(data); err != nil {
+		return 0, err
+	}
+
+	return binary.BigEndian.Uint64(data), nil
+}
+
 func (b *Buffer) WriteUnsignedLong(v uint64) {
 	data := make([]byte, 8)
 	binary.BigEndian.PutUint64(data, v)
@@ -124,6 +133,15 @@ func (b *Buffer) WriteUnsignedLong(v uint64) {
 
 func (b *Buffer) WriteFloat(v float32) {
 	b.WriteUnsignedInt(math.Float32bits(v))
+}
+
+func (b *Buffer) ReadDouble() (float64, error) {
+	v, err := b.ReadUnsignedLong()
+	if err != nil {
+		return 0, err
+	}
+
+	return math.Float64frombits(v), nil
 }
 
 func (b *Buffer) WriteDouble(v float64) {
