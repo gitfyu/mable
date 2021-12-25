@@ -9,6 +9,7 @@ import (
 	"github.com/gitfyu/mable/world/block"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
+	"math"
 	"sync"
 	"time"
 )
@@ -26,12 +27,15 @@ type PlayerConn interface {
 // Player represents a player entity
 type Player struct {
 	Entity
-	name      string
-	uid       uuid.UUID
-	conn      PlayerConn
-	pos       world.Pos
-	posLock   sync.RWMutex
-	worldLeft *sync.Cond
+	name string
+	uid  uuid.UUID
+	conn PlayerConn
+
+	// world- and position related values
+	pos          world.Pos
+	posLock      sync.RWMutex
+	chunkUpdates chan interface{}
+
 	pings     chan int32
 	destroyed chan struct{}
 }
@@ -39,15 +43,16 @@ type Player struct {
 // NewPlayer constructs a new player
 func NewPlayer(name string, uid uuid.UUID, conn PlayerConn) *Player {
 	p := &Player{
-		Entity:    NewEntity(),
-		name:      name,
-		uid:       uid,
-		conn:      conn,
-		destroyed: make(chan struct{}),
+		Entity:       NewEntity(),
+		name:         name,
+		uid:          uid,
+		conn:         conn,
+		destroyed:    make(chan struct{}),
+		chunkUpdates: make(chan interface{}, 100),
 	}
-	p.worldLeft = sync.NewCond(&p.posLock)
 
 	go p.keepAlive()
+	go p.updateChunks()
 
 	return p
 }
@@ -55,10 +60,6 @@ func NewPlayer(name string, uid uuid.UUID, conn PlayerConn) *Player {
 // Destroy should be called to clean up resources when this Player is no longer needed. The Player should not be used
 // again afterwards.
 func (p *Player) Destroy() {
-	p.posLock.Lock()
-	defer p.posLock.Unlock()
-
-	p.leaveWorld()
 	close(p.destroyed)
 }
 
@@ -74,11 +75,6 @@ func (p *Player) setCoords(x, y, z float64) {
 func (p *Player) SetPos(pos world.Pos) error {
 	p.posLock.Lock()
 	defer p.posLock.Unlock()
-
-	if p.pos.World != pos.World {
-		p.leaveWorld()
-		p.enterWorld(pos.World)
-	}
 
 	p.pos = pos
 
@@ -97,30 +93,61 @@ func (p *Player) SetPos(pos world.Pos) error {
 	return p.conn.WritePacket(packet.PlayServerPosAndLook, buf)
 }
 
-// leaveWorld removes the player from their current world, if they are in one. The calling goroutine MUST hold the
-// Player.posLock!
-func (p *Player) leaveWorld() {
-	if p.pos.World != nil {
-		p.pos.World.Unsubscribe(world.SubscriberID(p.GetEntityID()))
-		// wait for all updates from previous world to be processed
-		p.worldLeft.Wait()
+func (p *Player) GetChunkPos() world.ChunkPos {
+	p.posLock.RLock()
+	defer p.posLock.RUnlock()
+
+	return world.ChunkPos{
+		X: int32(math.Floor(p.pos.X / 16)),
+		Z: int32(math.Floor(p.pos.Z / 16)),
 	}
 }
 
-// enterWorld adds a player to a new world. The calling goroutine MUST hold the Player.posLock!
-func (p *Player) enterWorld(w *world.World) {
-	if w != nil {
-		ch := w.Subscribe(world.SubscriberID(p.GetEntityID()))
-		go func() {
-			for msg := range ch {
-				log.Debug().
-					Str("receiver", p.name).
-					Interface("msg", msg).
-					Msg("World update received")
+func (p *Player) updateChunks() {
+	// TODO configurable chunk update rate
+	ticker := time.NewTicker(time.Millisecond * 500)
+	defer ticker.Stop()
+
+	// TODO
+	const viewDist = 2
+
+	subId := uint32(p.GetEntityID())
+	chunks := make(map[world.ChunkPos]*world.Chunk)
+
+	for {
+		select {
+		case <-ticker.C:
+			center := p.GetChunkPos()
+
+			// Unload chunks that have gone out of range
+			for pos, c := range chunks {
+				if pos.Dist(center) > viewDist {
+					c.Unsubscribe(subId)
+					delete(chunks, pos)
+				}
 			}
-			// signal that all updates have been processed
-			p.worldLeft.Signal()
-		}()
+
+			// Load new chunks
+			for x := center.X - viewDist; x <= center.X+viewDist; x++ {
+				for z := center.Z - viewDist; z <= center.Z+viewDist; z++ {
+					pos := world.ChunkPos{X: x, Z: z}
+					if _, loaded := chunks[pos]; !loaded {
+						c := p.pos.World.GetChunk(pos)
+						if c != nil {
+							c.Subscribe(subId, p.chunkUpdates)
+							chunks[pos] = c
+						}
+					}
+				}
+			}
+		case msg := <-p.chunkUpdates:
+			log.Debug().Interface("msg", msg).Msg("Chunk update")
+		case <-p.destroyed:
+			for _, c := range chunks {
+				c.Unsubscribe(subId)
+			}
+			return
+		}
 	}
 }
 
