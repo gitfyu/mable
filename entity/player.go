@@ -4,6 +4,7 @@ import (
 	"github.com/gitfyu/mable/chat"
 	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/packet"
+	"github.com/gitfyu/mable/protocol/packet/play"
 	"github.com/gitfyu/mable/world"
 	"github.com/gitfyu/mable/world/biome"
 	"github.com/google/uuid"
@@ -18,7 +19,7 @@ const PlayerEyeHeight = 1.62
 // PlayerConn represents a player's network connection
 type PlayerConn interface {
 	// WritePacket sends a packet to the player
-	WritePacket(id packet.ID, buf *packet.Buffer) error
+	WritePacket(pk packet.Outbound) error
 	// Disconnect kicks the player from the server
 	Disconnect(reason *chat.Msg) error
 }
@@ -77,19 +78,14 @@ func (p *Player) SetPos(pos world.Pos) error {
 
 	p.pos = pos
 
-	buf := packet.AcquireBuffer()
-	defer packet.ReleaseBuffer(buf)
-
-	buf.WriteDouble(p.pos.X)
-	buf.WriteDouble(p.pos.Y + PlayerEyeHeight)
-	buf.WriteDouble(p.pos.Z)
-	buf.WriteFloat(p.pos.Yaw)
-	buf.WriteFloat(p.pos.Pitch)
-
-	// flags indicating all values are absolute
-	buf.WriteSignedByte(0)
-
-	return p.conn.WritePacket(packet.PlayServerPosAndLook, buf)
+	pk := play.OutPosition{
+		X:     pos.X,
+		Y:     pos.Y + PlayerEyeHeight,
+		Z:     pos.Z,
+		Yaw:   pos.Yaw,
+		Pitch: pos.Pitch,
+	}
+	return p.conn.WritePacket(&pk)
 }
 
 func (p *Player) GetChunkPos() world.ChunkPos {
@@ -170,45 +166,41 @@ func (p *Player) keepAlive() {
 // TODO currently the actual data being sent is hardcoded, in the future it should be passed as a parameter
 
 func (p *Player) SendChunkData(chunkX, chunkZ int32, c *world.Chunk) error {
-	buf := packet.AcquireBuffer()
-	defer packet.ReleaseBuffer(buf)
-
-	buf.WriteInt(chunkX)
-	buf.WriteInt(chunkZ)
-	// true means full chunk
-	buf.WriteBool(true)
-
-	// mask, first bit set means only the lowest section is sent
-	buf.WriteUnsignedShort(1)
-	buf.WriteVarInt(protocol.VarInt(protocol.ChunkDataSize(1)))
+	pk := play.OutChunkData{
+		X:         chunkX,
+		Z:         chunkZ,
+		FullChunk: true,
+		Mask:      1,
+		Data:      make([]byte, protocol.ChunkDataSize(1)),
+	}
 
 	// TODO this code currently assumes that the chunk will only write one section, which is not always the case
-	c.WriteBlocks(buf)
+	c.WriteBlocks(pk.Data)
+	off := 16 * 16 * 16 * 2
 
 	// block light
 	for i := 0; i < protocol.LightDataSize; i++ {
-		buf.WriteUnsignedByte(protocol.FullBright<<4 | protocol.FullBright)
+		pk.Data[off+i] = protocol.FullBright<<4 | protocol.FullBright
 	}
+	off += protocol.LightDataSize
 
 	// skylight
 	for i := 0; i < protocol.LightDataSize; i++ {
-		buf.WriteUnsignedByte(protocol.FullBright<<4 | protocol.FullBright)
+		pk.Data[off+i] = protocol.FullBright<<4 | protocol.FullBright
 	}
+	off += protocol.LightDataSize
 
 	// biomes
 	for i := 0; i < 256; i++ {
-		buf.WriteUnsignedByte(uint8(biome.Plains))
+		pk.Data[off+i] = uint8(biome.Plains)
 	}
 
-	return p.conn.WritePacket(packet.PlayServerChunkData, buf)
+	return p.conn.WritePacket(&pk)
 }
 
 func (p *Player) Ping() error {
-	buf := packet.AcquireBuffer()
-	defer packet.ReleaseBuffer(buf)
-
-	// TODO currently the same arbitrary ID is sent every time, since the server has no use for the response (yet)
-	buf.WriteVarInt(0)
-
-	return p.conn.WritePacket(packet.PlayServerKeepAlive, buf)
+	pk := play.OutKeepAlive{
+		ID: 0,
+	}
+	return p.conn.WritePacket(&pk)
 }

@@ -3,7 +3,14 @@ package packet
 import (
 	"github.com/gitfyu/mable/protocol"
 	"io"
+	"sync"
 )
+
+var writeBufPool = sync.Pool{
+	New: func() interface{} {
+		return new(protocol.WriteBuffer)
+	},
+}
 
 // Writer is used to write packets
 type Writer struct {
@@ -29,17 +36,18 @@ func (w *Writer) writeVarInt(v protocol.VarInt) error {
 	return nil
 }
 
-func (w *Writer) WritePacket(id ID, data *Buffer) error {
-	size := protocol.VarIntSize(protocol.VarInt(id)) + data.Len()
-	if err := w.writeVarInt(protocol.VarInt(size)); err != nil {
+func (w *Writer) WritePacket(pk Outbound) error {
+	buf := writeBufPool.Get().(*protocol.WriteBuffer)
+	defer writeBufPool.Put(buf)
+
+	buf.Reset()
+	pk.MarshalPacket(buf)
+
+	if err := w.writeVarInt(protocol.VarInt(buf.Len())); err != nil {
 		return err
 	}
 
-	if err := w.writeVarInt(protocol.VarInt(id)); err != nil {
-		return err
-	}
-
-	if _, err := w.writer.Write(data.Bytes()); err != nil {
+	if _, err := w.writer.Write(buf.Bytes()); err != nil {
 		return err
 	}
 

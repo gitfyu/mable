@@ -1,7 +1,6 @@
 package world
 
 import (
-	"github.com/gitfyu/mable/protocol/packet"
 	"github.com/gitfyu/mable/world/block"
 	"sync"
 )
@@ -79,11 +78,11 @@ func (c *Chunk) SetBlock(x, y, z uint8, data BlockData) bool {
 	return true
 }
 
-func (c *Chunk) WriteBlocks(buf *packet.Buffer) {
+func (c *Chunk) WriteBlocks(buf []byte) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
-	buf.Write(c.blocks)
+	copy(buf, c.blocks)
 }
 
 // Subscribe registers the specified channel to receive updates for this Chunk. The specified ID must be unique to the

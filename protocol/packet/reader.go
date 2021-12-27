@@ -7,18 +7,22 @@ import (
 	"io"
 )
 
-var errTooLarge = errors.New("packet exceeds maximum size")
+var (
+	errTooLarge  = errors.New("packet exceeds maximum size")
+	errBadPacket = errors.New("bad packet")
+)
 
 // ReaderConfig is used to configure settings for a Reader
 type ReaderConfig struct {
-	// MaxSize is the maximum size in bytes per packet. Larger packets will be rejected.
+	// MaxSize is the maximum size in Bytes per packet. Larger packets will be rejected.
 	MaxSize int
 }
 
 // Reader is used to read packets
 type Reader struct {
-	reader *bufio.Reader
-	cfg    ReaderConfig
+	reader  *bufio.Reader
+	cfg     ReaderConfig
+	readBuf protocol.ReadBuffer
 }
 
 // NewReader constructs a new Reader that reads from the provided io.Reader
@@ -29,27 +33,40 @@ func NewReader(r io.Reader, cfg ReaderConfig) *Reader {
 	}
 }
 
-// ReadPacket reads a single packet
-func (r *Reader) ReadPacket(buf *Buffer) (ID, error) {
+// ReadPacket reads a single packet. It returns nil for unknown packets.
+func (r *Reader) ReadPacket(state protocol.State) (pk Inbound, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			if e, ok := r.(error); ok {
+				err = e
+			} else {
+				err = errBadPacket
+			}
+		}
+	}()
+
 	var size protocol.VarInt
 	if err := protocol.ReadVarInt(r.reader, &size); err != nil {
-		return 0, err
+		return nil, err
 	}
 	if int(size) > r.cfg.MaxSize {
-		return 0, errTooLarge
+		return nil, errTooLarge
 	}
 
 	var id protocol.VarInt
 	if err := protocol.ReadVarInt(r.reader, &id); err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	data := make([]byte, int(size)-protocol.VarIntSize(id))
-	if _, err := io.ReadFull(r.reader, data); err != nil {
-		return 0, err
+	if err := r.readBuf.ReadAll(r.reader, int(size)-protocol.VarIntSize(id)); err != nil {
+		return nil, err
 	}
 
-	_, _ = buf.Write(data)
+	pk = decodeInbound(state, id)
+	if pk == nil {
+		return nil, nil
+	}
 
-	return ID(id), nil
+	pk.UnmarshalPacket(&r.readBuf)
+	return pk, nil
 }

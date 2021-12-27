@@ -2,7 +2,7 @@ package mable
 
 import (
 	"github.com/gitfyu/mable/entity"
-	"github.com/gitfyu/mable/protocol/packet"
+	"github.com/gitfyu/mable/protocol/packet/play"
 	"github.com/gitfyu/mable/world"
 	"github.com/google/uuid"
 )
@@ -27,36 +27,26 @@ func handlePlay(c *conn, username string, id uuid.UUID) error {
 	}
 
 	for c.IsOpen() {
-		id, data, err := c.readPacket()
+		pk, err := c.readPacket()
 		if err != nil {
 			return err
 		}
 
-		if err := p.HandlePacket(id, data); err != nil {
-			return err
-		}
+		p.HandlePacket(pk)
 	}
 
 	return nil
 }
 
 func writeJoinGame(c *conn, id entity.ID) error {
-	buf := packet.AcquireBuffer()
-	defer packet.ReleaseBuffer(buf)
-
-	buf.WriteInt(int32(id))
-	// creative gamemode
-	buf.WriteUnsignedByte(uint8(1))
-	// overworld dimension
-	buf.WriteSignedByte(0)
-	// easy difficulty
-	buf.WriteUnsignedByte(1)
-	// max players, unused
-	buf.WriteUnsignedByte(0)
-	// level type
-	buf.WriteString("flat")
-	// disable reduced debug info
-	buf.WriteBool(false)
-
-	return c.WritePacket(packet.PlayServerJoinGame, buf)
+	pk := play.OutJoinGame{
+		EntityID:      int(id),
+		Gamemode:      1,
+		Dimension:     0,
+		Difficulty:    1,
+		MaxPlayers:    0,
+		LevelType:     "flat",
+		ReduceDbgInfo: false,
+	}
+	return c.WritePacket(&pk)
 }

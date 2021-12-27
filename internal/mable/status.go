@@ -1,8 +1,8 @@
 package mable
 
 import (
-	"fmt"
-	"github.com/gitfyu/mable/protocol/packet"
+	"errors"
+	"github.com/gitfyu/mable/protocol/packet/status"
 )
 
 // TODO implement a way to properly generate the JSON response in the future
@@ -27,46 +27,41 @@ func handleStatus(c *conn) error {
 }
 
 func readStatusRequest(c *conn) error {
-	id, _, err := c.readPacket()
+	pk, err := c.readPacket()
 	if err != nil {
 		return err
 	}
-	if id != packet.StatusRequest {
-		return fmt.Errorf("expected packet %d, got %d", packet.StatusRequest, id)
+	if _, ok := pk.(*status.Request); ok {
+		return errors.New("expected status request")
 	}
 
 	return nil
 }
 
 func writeStatusResponse(c *conn) error {
-	buf := packet.AcquireBuffer()
-	defer packet.ReleaseBuffer(buf)
-
-	buf.WriteString(defaultResponse)
-	return c.WritePacket(packet.StatusResponse, buf)
+	pk := status.Response{
+		Content: defaultResponse,
+	}
+	return c.WritePacket(&pk)
 }
 
 func readStatusPing(c *conn) (int64, error) {
-	id, buf, err := c.readPacket()
-	if err != nil {
-		return 0, err
-	}
-	if id != packet.StatusPing {
-		return 0, fmt.Errorf("expected packet %d, got %d", packet.StatusPing, id)
-	}
-
-	time, err := buf.ReadLong()
+	pk, err := c.readPacket()
 	if err != nil {
 		return 0, err
 	}
 
-	return time, nil
+	ping, ok := pk.(*status.Ping)
+	if !ok {
+		return 0, errors.New("expected ping")
+	}
+
+	return ping.Time, nil
 }
 
 func writeStatusPong(c *conn, time int64) error {
-	buf := packet.AcquireBuffer()
-	defer packet.ReleaseBuffer(buf)
-
-	buf.WriteLong(time)
-	return c.WritePacket(packet.StatusPong, buf)
+	pk := status.Pong{
+		Time: time,
+	}
+	return c.WritePacket(&pk)
 }

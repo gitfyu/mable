@@ -2,7 +2,7 @@ package mable
 
 import (
 	"errors"
-	"github.com/gitfyu/mable/protocol/packet"
+	"github.com/gitfyu/mable/protocol/packet/login"
 	"github.com/google/uuid"
 )
 
@@ -20,23 +20,22 @@ func handleLogin(c *conn) (string, uuid.UUID, error) {
 }
 
 func readLoginStart(c *conn) (string, error) {
-	id, buf, err := c.readPacket()
+	pk, err := c.readPacket()
 	if err != nil {
 		return "", err
 	}
-	if id != packet.LoginStart {
+	l, ok := pk.(*login.Start)
+	if !ok {
 		return "", errors.New("expected login start")
 	}
 
-	return buf.ReadString()
+	return l.Username, nil
 }
 
 func writeLoginSuccess(c *conn, username string, id uuid.UUID) error {
-	buf := packet.AcquireBuffer()
-	defer packet.ReleaseBuffer(buf)
-
-	buf.WriteString(id.String())
-	buf.WriteString(username)
-
-	return c.WritePacket(packet.LoginSuccess, buf)
+	pk := login.Success{
+		UUID:     id,
+		Username: username,
+	}
+	return c.WritePacket(&pk)
 }
