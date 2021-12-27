@@ -5,6 +5,7 @@ import (
 	"github.com/gitfyu/mable/chat"
 	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/packet"
+	"github.com/gitfyu/mable/protocol/packet/login"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -103,32 +104,23 @@ func (c *conn) WritePacket(pk packet.Outbound) error {
 
 // Disconnect kicks the player with a specified reason
 func (c *conn) Disconnect(reason *chat.Msg) error {
-	// TODO
-
-	/*str, err := json.Marshal(reason)
-	if err != nil {
-		return err
-	}
-
-	var id packet.ID
-
+	var err error
 	switch c.state {
 	case protocol.StatePlay:
-		id = packet.PlayServerDisconnect
+		err = c.WritePacket(&login.Disconnect{
+			Reason: reason,
+		})
 	case protocol.StateLogin:
-		id = packet.LoginDisconnect
+		err = c.WritePacket(&login.Disconnect{
+			Reason: reason,
+		})
 	default:
 		return errActionUnsupportedState
 	}
 
-	buf := packet.AcquireBuffer()
-	defer packet.ReleaseBuffer(buf)
-
-	buf.WriteStringFromBytes(str)
-
-	if err := c.WritePacket(id, buf); err != nil {
+	if err != nil {
 		return err
-	}*/
+	}
 
 	return c.Close()
 }

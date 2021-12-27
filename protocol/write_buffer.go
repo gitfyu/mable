@@ -1,6 +1,8 @@
 package protocol
 
 import (
+	"encoding/json"
+	"github.com/gitfyu/mable/chat"
 	"math"
 )
 
@@ -89,6 +91,21 @@ func (w *WriteBuffer) WriteString(str string) {
 	b := []byte(str)
 	w.WriteVarInt(int32(len(b)))
 	w.WriteBytes(b)
+}
+
+func (w *WriteBuffer) WriteByteArrayWithLength(b []byte) {
+	w.WriteVarInt(int32(len(b)))
+	w.WriteBytes(b)
+}
+
+func (w *WriteBuffer) WriteChat(msg *chat.Msg) {
+	str, err := json.Marshal(msg)
+	if err != nil {
+		// should never happen
+		panic(err)
+	}
+
+	w.WriteByteArrayWithLength(str)
 }
 
 func (w *WriteBuffer) Len() int {
