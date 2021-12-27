@@ -4,8 +4,8 @@ package world
 
 // Default is a global default world
 var Default = NewWorld(map[ChunkPos]*Chunk{
-	ChunkPos{0, 0}: NewChunk(),
-	ChunkPos{0, 1}: NewChunk(),
-	ChunkPos{1, 0}: NewChunk(),
-	ChunkPos{1, 1}: NewChunk(),
+	ChunkPos{0, 0}: NewChunk(0, 0),
+	ChunkPos{0, 1}: NewChunk(0, 0),
+	ChunkPos{1, 0}: NewChunk(0, 0),
+	ChunkPos{1, 1}: NewChunk(0, 0),
 })
