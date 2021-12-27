@@ -7,16 +7,13 @@ import (
 )
 
 // HandlePacket processes an incoming packet for the player
-func (p *Player) HandlePacket(pk packet.Inbound) error {
+func (p *Player) HandlePacket(pk packet.Inbound) {
 	switch pk.(type) {
 	case *play.InKeepAlive:
-		return p.handleKeepAlive(pk.(*play.InKeepAlive))
-	default:
-		return nil
+		p.handleKeepAlive(pk.(*play.InKeepAlive))
 	}
 }
 
-func (p *Player) handleKeepAlive(pk *play.InKeepAlive) error {
+func (p *Player) handleKeepAlive(pk *play.InKeepAlive) {
 	log.Debug().Int("id", pk.ID).Msg("KeepAlive")
-	return nil
 }
