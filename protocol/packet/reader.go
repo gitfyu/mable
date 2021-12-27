@@ -62,7 +62,7 @@ func (r *Reader) ReadPacket(state protocol.State) (pk Inbound, err error) {
 		return nil, err
 	}
 
-	pk = decodeInbound(state, id)
+	pk = createInbound(state, uint(id))
 	if pk == nil {
 		return nil, nil
 	}

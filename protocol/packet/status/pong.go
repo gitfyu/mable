@@ -8,7 +8,10 @@ type Pong struct {
 	Time int64
 }
 
+func (_ Pong) PacketID() uint {
+	return 0x01
+}
+
 func (p *Pong) MarshalPacket(w *protocol.WriteBuffer) {
-	w.WriteVarInt(0x01)
 	w.WriteUint64(uint64(p.Time))
 }

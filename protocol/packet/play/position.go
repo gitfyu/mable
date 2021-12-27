@@ -10,8 +10,11 @@ type OutPosition struct {
 	Flags      uint8
 }
 
+func (_ OutPosition) PacketID() uint {
+	return 0x08
+}
+
 func (p *OutPosition) MarshalPacket(w *protocol.WriteBuffer) {
-	w.WriteVarInt(0x08)
 	w.WriteFloat64(p.X)
 	w.WriteFloat64(p.Y)
 	w.WriteFloat64(p.Z)

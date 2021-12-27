@@ -9,8 +9,11 @@ type OutChunkData struct {
 	Data      []byte
 }
 
+func (_ OutChunkData) PacketID() uint {
+	return 0x21
+}
+
 func (c *OutChunkData) MarshalPacket(w *protocol.WriteBuffer) {
-	w.WriteVarInt(0x21)
 	w.WriteUint32(uint32(c.X))
 	w.WriteUint32(uint32(c.Z))
 	w.WriteBool(c.FullChunk)

@@ -41,6 +41,7 @@ func (w *Writer) WritePacket(pk Outbound) error {
 	defer writeBufPool.Put(buf)
 
 	buf.Reset()
+	buf.WriteVarInt(int(pk.PacketID()))
 	pk.MarshalPacket(buf)
 
 	if err := w.writeVarInt(protocol.VarInt(buf.Len())); err != nil {

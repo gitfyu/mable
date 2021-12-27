@@ -8,7 +8,10 @@ type Response struct {
 	Content string
 }
 
+func (_ Response) PacketID() uint {
+	return 0x00
+}
+
 func (r *Response) MarshalPacket(w *protocol.WriteBuffer) {
-	w.WriteVarInt(0x00)
 	w.WriteString(r.Content)
 }

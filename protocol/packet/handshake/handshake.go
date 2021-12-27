@@ -2,6 +2,7 @@ package handshake
 
 import (
 	"github.com/gitfyu/mable/protocol"
+	"github.com/gitfyu/mable/protocol/packet"
 )
 
 type Handshake struct {
@@ -9,6 +10,12 @@ type Handshake struct {
 	Addr      string
 	Port      uint16
 	NextState protocol.State
+}
+
+func init() {
+	packet.RegisterInbound(protocol.StateHandshake, 0x00, func() packet.Inbound {
+		return &Handshake{}
+	})
 }
 
 func (h *Handshake) UnmarshalPacket(r *protocol.ReadBuffer) {
