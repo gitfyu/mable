@@ -1,6 +1,7 @@
 package world
 
 import (
+	"github.com/gitfyu/mable/protocol/packet"
 	"github.com/gitfyu/mable/world/block"
 	"sync"
 )
@@ -45,7 +46,7 @@ type Chunk struct {
 	lock       sync.RWMutex
 	minSection uint8
 	maxSection uint8
-	blocks     []uint16
+	blocks     []uint8
 }
 
 // NewChunk constructs a new Chunk, where minSection is the index of the lowest section and maxSection the index of the
@@ -55,7 +56,7 @@ func NewChunk(minSection uint8, maxSection uint8) *Chunk {
 		listeners:  make(map[uint32]chan<- interface{}),
 		minSection: minSection,
 		maxSection: maxSection,
-		blocks:     make([]uint16, 16*16*16*int(maxSection-minSection+1)),
+		blocks:     make([]uint8, 2*16*16*16*int(maxSection-minSection+1)),
 	}
 }
 
@@ -70,8 +71,19 @@ func (c *Chunk) SetBlock(x, y, z uint8, data BlockData) bool {
 		return false
 	}
 
-	c.blocks[int(sectionIdx-c.minSection)<<12|int(y&15)<<8|int(z)<<4|int(x)] = data.toUint16()
+	idx := int(sectionIdx-c.minSection)<<13 | int(y&15)<<9 | int(z)<<5 | int(x)<<1
+	v := data.toUint16()
+
+	c.blocks[idx] = uint8(v)
+	c.blocks[idx+1] = uint8(v >> 8)
 	return true
+}
+
+func (c *Chunk) WriteBlocks(buf *packet.Buffer) {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
+	buf.Write(c.blocks)
 }
 
 // Subscribe registers the specified channel to receive updates for this Chunk. The specified ID must be unique to the

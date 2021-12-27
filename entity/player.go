@@ -6,7 +6,6 @@ import (
 	"github.com/gitfyu/mable/protocol/packet"
 	"github.com/gitfyu/mable/world"
 	"github.com/gitfyu/mable/world/biome"
-	"github.com/gitfyu/mable/world/block"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 	"math"
@@ -136,6 +135,8 @@ func (p *Player) updateChunks() {
 						if c != nil {
 							c.Subscribe(subId, p.chunkUpdates)
 							chunks[pos] = c
+
+							_ = p.SendChunkData(x, z, c)
 						}
 					}
 				}
@@ -168,7 +169,7 @@ func (p *Player) keepAlive() {
 
 // TODO currently the actual data being sent is hardcoded, in the future it should be passed as a parameter
 
-func (p *Player) SendChunkData(chunkX, chunkZ int32) error {
+func (p *Player) SendChunkData(chunkX, chunkZ int32, c *world.Chunk) error {
 	buf := packet.AcquireBuffer()
 	defer packet.ReleaseBuffer(buf)
 
@@ -181,14 +182,8 @@ func (p *Player) SendChunkData(chunkX, chunkZ int32) error {
 	buf.WriteUnsignedShort(1)
 	buf.WriteVarInt(protocol.VarInt(protocol.ChunkDataSize(1)))
 
-	// blocks
-	for y := 0; y < 16; y++ {
-		for z := 0; z < 16; z++ {
-			for x := 0; x < 16; x++ {
-				buf.WriteUnsignedShortLittleEndian(protocol.EncodeBlockData(block.Stone, 0))
-			}
-		}
-	}
+	// TODO this code currently assumes that the chunk will only write one section, which is not always the case
+	c.WriteBlocks(buf)
 
 	// block light
 	for i := 0; i < protocol.LightDataSize; i++ {

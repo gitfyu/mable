@@ -15,9 +15,6 @@ func handlePlay(c *conn, username string, id uuid.UUID) error {
 	if err := writeJoinGame(c, p.GetEntityID()); err != nil {
 		return err
 	}
-	if err := p.SendChunkData(0, 0); err != nil {
-		return err
-	}
 
 	err := p.SetPos(world.Pos{
 		World: world.Default,
