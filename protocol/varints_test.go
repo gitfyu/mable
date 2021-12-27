@@ -9,7 +9,7 @@ import (
 
 type varIntTest struct {
 	// the value
-	val VarInt
+	val int32
 	// the encoded value
 	bytes []byte
 }
@@ -37,11 +37,11 @@ func Test_ReadVarInt(t *testing.T) {
 	for _, test := range varIntTests {
 		t.Run(fmt.Sprintf("%v", test), func(t *testing.T) {
 			r := bufio.NewReader(bytes.NewReader(test.bytes))
-			var val VarInt
-
-			if err := ReadVarInt(r, &val); err != nil {
+			val, err := ReadVarInt(r)
+			if err != nil {
 				t.Error(err)
 			}
+
 			if test.val != val {
 				t.Errorf("Expected val %d, got %d", test.val, val)
 			}
@@ -51,8 +51,8 @@ func Test_ReadVarInt(t *testing.T) {
 
 func Test_ReadVarInt_Invalid(t *testing.T) {
 	r := bufio.NewReader(bytes.NewReader(varIntInvalidTest.bytes))
-	var val VarInt
-	if err := ReadVarInt(r, &val); err == nil {
+	_, err := ReadVarInt(r)
+	if err == nil {
 		t.Error("Expected error")
 	}
 }

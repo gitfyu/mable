@@ -28,5 +28,5 @@ func (_ OutKeepAlive) PacketID() uint {
 }
 
 func (k *OutKeepAlive) MarshalPacket(w *protocol.WriteBuffer) {
-	w.WriteVarInt(k.ID)
+	w.WriteVarInt(int32(k.ID))
 }

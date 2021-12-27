@@ -18,11 +18,11 @@ var (
 // https://github.com/Tnze/go-mc/blob/master/net/packet/types.go
 
 // VarIntSize returns the number of bytes required to write for the given value
-func VarIntSize(v uint32) int {
-	return (31-bits.LeadingZeros32(v))/7 + 1
+func VarIntSize(v int32) int {
+	return (31-bits.LeadingZeros32(uint32(v)))/7 + 1
 }
 
-func ReadVarInt(r io.ByteReader) (uint32, error) {
+func ReadVarInt(r io.ByteReader) (int32, error) {
 	var v uint32
 	var n int
 
@@ -43,16 +43,17 @@ func ReadVarInt(r io.ByteReader) (uint32, error) {
 		}
 	}
 
-	return v, nil
+	return int32(v), nil
 }
 
 // WriteVarInt writes a VarInt to a byte slice. If the slice is too small, this function will panic. You can check the
 // required size using VarIntSize.
-func WriteVarInt(buf []byte, v uint32) {
-	for i := 0; v != 0; i++ {
-		b := v & 0x7F
-		v >>= 7
-		if v != 0 {
+func WriteVarInt(buf []byte, v int32) {
+	uv := uint32(v)
+	for i := 0; uv != 0; i++ {
+		b := uv & 0x7F
+		uv >>= 7
+		if uv != 0 {
 			b |= 0x80
 		}
 

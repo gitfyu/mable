@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"math"
-	"math/bits"
 )
 
 type WriteBuffer struct {
@@ -65,12 +64,10 @@ func (w *WriteBuffer) WriteUint64(v uint64) {
 	w.off += 8
 }
 
-func (w *WriteBuffer) WriteVarInt(v int) {
-	uv := uint32(v)
-	size := (31-bits.LeadingZeros32(uv))/7 + 1
-
+func (w *WriteBuffer) WriteVarInt(v int32) {
+	size := VarIntSize(v)
 	w.ensureSpace(size)
-	WriteVarInt(w.data[w.off:], uv)
+	WriteVarInt(w.data[w.off:], v)
 	w.off += size
 }
 
@@ -90,7 +87,7 @@ func (w *WriteBuffer) WriteBytes(b []byte) {
 
 func (w *WriteBuffer) WriteString(str string) {
 	b := []byte(str)
-	w.WriteVarInt(len(b))
+	w.WriteVarInt(int32(len(b)))
 	w.WriteBytes(b)
 }
 
