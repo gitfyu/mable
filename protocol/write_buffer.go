@@ -66,27 +66,12 @@ func (w *WriteBuffer) WriteUint64(v uint64) {
 }
 
 func (w *WriteBuffer) WriteVarInt(v int) {
-	// TODO currently both this file and varints.go implement reading varints, merge them in the future
-	// https://github.com/Tnze/go-mc/blob/master/net/packet/types.go#L247
-	val := uint32(v)
-	size := (31-bits.LeadingZeros32(val))/7 + 1
+	uv := uint32(v)
+	size := (31-bits.LeadingZeros32(uv))/7 + 1
 
 	w.ensureSpace(size)
-
-	for {
-		b := val & 0x7F
-		val >>= 7
-		if val != 0 {
-			b |= 0x80
-		}
-
-		w.data[w.off] = byte(b)
-		w.off++
-
-		if val == 0 {
-			return
-		}
-	}
+	WriteVarInt(w.data[w.off:], uv)
+	w.off += size
 }
 
 func (w *WriteBuffer) WriteFloat32(v float32) {

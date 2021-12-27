@@ -45,16 +45,16 @@ func (r *Reader) ReadPacket(state protocol.State) (pk Inbound, err error) {
 		}
 	}()
 
-	var size protocol.VarInt
-	if err := protocol.ReadVarInt(r.reader, &size); err != nil {
+	size, err := protocol.ReadVarInt(r.reader)
+	if err != nil {
 		return nil, err
 	}
 	if int(size) > r.cfg.MaxSize {
 		return nil, errTooLarge
 	}
 
-	var id protocol.VarInt
-	if err := protocol.ReadVarInt(r.reader, &id); err != nil {
+	id, err := protocol.ReadVarInt(r.reader)
+	if err != nil {
 		return nil, err
 	}
 

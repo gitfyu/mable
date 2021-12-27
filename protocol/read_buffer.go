@@ -1,10 +1,11 @@
 package protocol
 
 import (
-	"errors"
 	"io"
 )
 
+// ReadBuffer is a utility for reading data types that are common in packets from a byte slice. Most of it's functions
+// do not return an error, instead they will panic.
 type ReadBuffer struct {
 	data []byte
 }
@@ -48,21 +49,7 @@ func (r *ReadBuffer) ReadUint64() uint64 {
 }
 
 func (r *ReadBuffer) ReadVarInt() int {
-	// TODO currently both this file and varints.go implement reading varints, merge them in the future
-	// https://github.com/Tnze/go-mc/blob/master/net/packet/types.go#L265
-	var v uint32
-	i := 0
-
-	for b := byte(0x80); b&0x80 != 0; i++ {
-		if i > 5 {
-			panic(errors.New("VarInt too big"))
-		}
-
-		b = r.data[i]
-		v |= uint32(b&0x7F) << uint32(7*i)
-	}
-
-	r.data = r.data[i:]
+	v, _ := ReadVarInt(r)
 	return int(v)
 }
 
@@ -72,4 +59,10 @@ func (r *ReadBuffer) ReadString() string {
 	r.data = r.data[n:]
 
 	return s
+}
+
+func (r *ReadBuffer) ReadByte() (byte, error) {
+	b := r.data[0]
+	r.data = r.data[1:]
+	return b, nil
 }

@@ -24,7 +24,7 @@ func NewWriter(w io.Writer) *Writer {
 	}
 }
 
-func (w *Writer) writeVarInt(v protocol.VarInt) error {
+func (w *Writer) writeVarInt(v uint32) error {
 	n := protocol.VarIntSize(v)
 	b := make([]byte, n)
 	protocol.WriteVarInt(b, v)
@@ -44,7 +44,7 @@ func (w *Writer) WritePacket(pk Outbound) error {
 	buf.WriteVarInt(int(pk.PacketID()))
 	pk.MarshalPacket(buf)
 
-	if err := w.writeVarInt(protocol.VarInt(buf.Len())); err != nil {
+	if err := w.writeVarInt(uint32(buf.Len())); err != nil {
 		return err
 	}
 
