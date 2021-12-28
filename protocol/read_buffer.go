@@ -4,7 +4,7 @@ import (
 	"io"
 )
 
-// ReadBuffer is a utility for reading data types that are common in packets from a byte slice. Most of it's functions
+// ReadBuffer is a utility for reading data types that are common in packets from a byte slice. Most of its functions
 // do not return an error, instead they will panic.
 type ReadBuffer struct {
 	data []byte
