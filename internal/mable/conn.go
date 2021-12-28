@@ -12,10 +12,6 @@ import (
 	"time"
 )
 
-var (
-	errActionUnsupportedState = errors.New("action not supported in current state")
-)
-
 type conn struct {
 	serv       *Server
 	conn       net.Conn
