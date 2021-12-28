@@ -14,16 +14,20 @@ func handleStatus(c *conn) error {
 	if err := readStatusRequest(c); err != nil {
 		return err
 	}
-	if err := writeStatusResponse(c); err != nil {
-		return err
-	}
+
+	c.WritePacket(&status.Response{
+		Content: defaultResponse,
+	})
 
 	time, err := readStatusPing(c)
 	if err != nil {
 		return err
 	}
 
-	return writeStatusPong(c, time)
+	c.WritePacket(&status.Pong{
+		Time: time,
+	})
+	return nil
 }
 
 func readStatusRequest(c *conn) error {
@@ -38,13 +42,6 @@ func readStatusRequest(c *conn) error {
 	return nil
 }
 
-func writeStatusResponse(c *conn) error {
-	pk := status.Response{
-		Content: defaultResponse,
-	}
-	return c.WritePacket(&pk)
-}
-
 func readStatusPing(c *conn) (int64, error) {
 	pk, err := c.readPacket()
 	if err != nil {
@@ -57,11 +54,4 @@ func readStatusPing(c *conn) (int64, error) {
 	}
 
 	return ping.Time, nil
-}
-
-func writeStatusPong(c *conn, time int64) error {
-	pk := status.Pong{
-		Time: time,
-	}
-	return c.WritePacket(&pk)
 }

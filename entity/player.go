@@ -19,9 +19,9 @@ const PlayerEyeHeight = 1.62
 // PlayerConn represents a player's network connection
 type PlayerConn interface {
 	// WritePacket sends a packet to the player
-	WritePacket(pk packet.Outbound) error
+	WritePacket(pk packet.Outbound)
 	// Disconnect kicks the player from the server
-	Disconnect(reason *chat.Msg) error
+	Disconnect(reason *chat.Msg)
 }
 
 // Player represents a player entity
@@ -72,20 +72,18 @@ func (p *Player) setCoords(x, y, z float64) {
 }
 
 // SetPos changes the player' position
-func (p *Player) SetPos(pos world.Pos) error {
+func (p *Player) SetPos(pos world.Pos) {
 	p.posLock.Lock()
 	defer p.posLock.Unlock()
 
 	p.pos = pos
-
-	pk := play.OutPosition{
+	p.conn.WritePacket(&play.OutPosition{
 		X:     pos.X,
 		Y:     pos.Y + PlayerEyeHeight,
 		Z:     pos.Z,
 		Yaw:   pos.Yaw,
 		Pitch: pos.Pitch,
-	}
-	return p.conn.WritePacket(&pk)
+	})
 }
 
 func (p *Player) GetChunkPos() world.ChunkPos {
@@ -132,7 +130,7 @@ func (p *Player) updateChunks() {
 							c.Subscribe(subId, p.chunkUpdates)
 							chunks[pos] = c
 
-							_ = p.SendChunkData(x, z, c)
+							p.SendChunkData(x, z, c)
 						}
 					}
 				}
@@ -156,7 +154,7 @@ func (p *Player) keepAlive() {
 	for {
 		select {
 		case <-ticker.C:
-			_ = p.Ping()
+			p.Ping()
 		case <-p.destroyed:
 			return
 		}
@@ -165,7 +163,7 @@ func (p *Player) keepAlive() {
 
 // TODO currently the actual data being sent is hardcoded, in the future it should be passed as a parameter
 
-func (p *Player) SendChunkData(chunkX, chunkZ int32, c *world.Chunk) error {
+func (p *Player) SendChunkData(chunkX, chunkZ int32, c *world.Chunk) {
 	pk := play.OutChunkData{
 		X:         chunkX,
 		Z:         chunkZ,
@@ -195,12 +193,11 @@ func (p *Player) SendChunkData(chunkX, chunkZ int32, c *world.Chunk) error {
 		pk.Data[off+i] = uint8(biome.Plains)
 	}
 
-	return p.conn.WritePacket(&pk)
+	p.conn.WritePacket(&pk)
 }
 
-func (p *Player) Ping() error {
-	pk := play.OutKeepAlive{
+func (p *Player) Ping() {
+	p.conn.WritePacket(&play.OutKeepAlive{
 		ID: 0,
-	}
-	return p.conn.WritePacket(&pk)
+	})
 }

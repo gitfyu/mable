@@ -6,8 +6,8 @@ import (
 	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/packet"
 	"github.com/gitfyu/mable/protocol/packet/login"
+	"github.com/rs/zerolog/log"
 	"net"
-	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -17,13 +17,14 @@ var (
 )
 
 type conn struct {
-	serv      *Server
-	conn      net.Conn
-	state     protocol.State
-	reader    *packet.Reader
-	writer    *packet.Writer
-	writeLock sync.Mutex
-	closed    int32
+	serv       *Server
+	conn       net.Conn
+	state      protocol.State
+	reader     *packet.Reader
+	writer     *packet.Writer
+	writeQueue chan packet.Outbound
+	closed     int32
+	flushed    chan struct{}
 }
 
 func newConn(s *Server, c net.Conn) *conn {
@@ -34,11 +35,35 @@ func newConn(s *Server, c net.Conn) *conn {
 		reader: packet.NewReader(c, packet.ReaderConfig{
 			MaxSize: s.cfg.MaxPacketSize,
 		}),
-		writer: packet.NewWriter(c),
+		writer:     packet.NewWriter(c),
+		writeQueue: make(chan packet.Outbound, 100), // TODO configurable size
+		flushed:    make(chan struct{}),
+	}
+}
+
+func (c *conn) dispatchPackets() {
+	var err error
+	for p := range c.writeQueue {
+		if err = c.conn.SetWriteDeadline(time.Now().Add(time.Second * time.Duration(c.serv.cfg.Timeout))); err != nil {
+			break
+		}
+
+		if err = c.writer.WritePacket(p); err != nil {
+			break
+		}
+	}
+
+	close(c.flushed)
+
+	if err != nil {
+		log.Debug().Err(err).Msg("Dispatch packet")
+		c.Close()
 	}
 }
 
 func (c *conn) handle() error {
+	go c.dispatchPackets()
+
 	s, ver, err := handleHandshake(c)
 	if err != nil {
 		return err
@@ -50,7 +75,8 @@ func (c *conn) handle() error {
 		return handleStatus(c)
 	case protocol.StateLogin:
 		if ver != 47 {
-			return c.Disconnect(&chat.Msg{Text: "Please use Minecraft 1.8."})
+			c.Disconnect(&chat.Msg{Text: "Please use Minecraft 1.8."})
+			return nil
 		}
 
 		username, id, err := handleLogin(c)
@@ -74,6 +100,8 @@ func (c *conn) Close() error {
 		return nil
 	}
 
+	close(c.writeQueue)
+	<-c.flushed
 	return c.conn.Close()
 }
 
@@ -91,36 +119,22 @@ func (c *conn) readPacket() (packet.Inbound, error) {
 }
 
 // WritePacket writes a single packet to the client. This function may be called concurrently.
-func (c *conn) WritePacket(pk packet.Outbound) error {
-	c.writeLock.Lock()
-	defer c.writeLock.Unlock()
-
-	if err := c.conn.SetWriteDeadline(time.Now().Add(time.Second * time.Duration(c.serv.cfg.Timeout))); err != nil {
-		return err
-	}
-
-	return c.writer.WritePacket(pk)
+func (c *conn) WritePacket(pk packet.Outbound) {
+	c.writeQueue <- pk
 }
 
 // Disconnect kicks the player with a specified reason
-func (c *conn) Disconnect(reason *chat.Msg) error {
-	var err error
+func (c *conn) Disconnect(reason *chat.Msg) {
 	switch c.state {
 	case protocol.StatePlay:
-		err = c.WritePacket(&login.Disconnect{
+		c.WritePacket(&login.Disconnect{
 			Reason: reason,
 		})
 	case protocol.StateLogin:
-		err = c.WritePacket(&login.Disconnect{
+		c.WritePacket(&login.Disconnect{
 			Reason: reason,
 		})
-	default:
-		return errActionUnsupportedState
 	}
 
-	if err != nil {
-		return err
-	}
-
-	return c.Close()
+	c.Close()
 }

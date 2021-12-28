@@ -16,7 +16,11 @@ func handleLogin(c *conn) (string, uuid.UUID, error) {
 	// TODO implement authenticated login
 
 	id := generateOfflineUUID(username)
-	return username, id, writeLoginSuccess(c, username, id)
+	c.WritePacket(&login.Success{
+		UUID:     id,
+		Username: username,
+	})
+	return username, id, nil
 }
 
 func readLoginStart(c *conn) (string, error) {
@@ -30,12 +34,4 @@ func readLoginStart(c *conn) (string, error) {
 	}
 
 	return l.Username, nil
-}
-
-func writeLoginSuccess(c *conn, username string, id uuid.UUID) error {
-	pk := login.Success{
-		UUID:     id,
-		Username: username,
-	}
-	return c.WritePacket(&pk)
 }
