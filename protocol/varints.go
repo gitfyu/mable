@@ -50,7 +50,7 @@ func ReadVarInt(r io.ByteReader) (int32, error) {
 // required size using VarIntSize.
 func WriteVarInt(buf []byte, v int32) {
 	uv := uint32(v)
-	for i := 0; uv != 0; i++ {
+	for i := 0; ; i++ {
 		b := uv & 0x7F
 		uv >>= 7
 		if uv != 0 {
@@ -58,5 +58,8 @@ func WriteVarInt(buf []byte, v int32) {
 		}
 
 		buf[i] = byte(b)
+		if uv == 0 {
+			return
+		}
 	}
 }

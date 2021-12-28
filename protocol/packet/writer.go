@@ -1,6 +1,7 @@
 package packet
 
 import (
+	"fmt"
 	"github.com/gitfyu/mable/protocol"
 	"io"
 	"sync"
@@ -45,11 +46,11 @@ func (w *Writer) WritePacket(pk Outbound) error {
 	pk.MarshalPacket(buf)
 
 	if err := w.writeVarInt(int32(buf.Len())); err != nil {
-		return err
+		return fmt.Errorf("writing packet size: %w", err)
 	}
 
 	if _, err := w.writer.Write(buf.Bytes()); err != nil {
-		return err
+		return fmt.Errorf("writing packet body: %w", err)
 	}
 
 	return nil

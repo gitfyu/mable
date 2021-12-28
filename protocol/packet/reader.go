@@ -3,6 +3,7 @@ package packet
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"github.com/gitfyu/mable/protocol"
 	"io"
 )
@@ -47,7 +48,7 @@ func (r *Reader) ReadPacket(state protocol.State) (pk Inbound, err error) {
 
 	size, err := protocol.ReadVarInt(r.reader)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("reading packet size: %w", err)
 	}
 	if int(size) > r.cfg.MaxSize {
 		return nil, errTooLarge
@@ -55,11 +56,11 @@ func (r *Reader) ReadPacket(state protocol.State) (pk Inbound, err error) {
 
 	id, err := protocol.ReadVarInt(r.reader)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("reading packet ID: %w", err)
 	}
 
 	if err := r.readBuf.ReadAll(r.reader, int(size)-protocol.VarIntSize(id)); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("reading packet body: %w", err)
 	}
 
 	pk = createInbound(state, uint(id))
