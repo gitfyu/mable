@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"io"
+	"math"
 )
 
 // ReadBuffer is a utility for reading data types that are common in packets from a byte slice. Most of its functions
@@ -18,6 +19,10 @@ func (r *ReadBuffer) ReadAll(src io.Reader, n int) error {
 	}
 	_, err := io.ReadFull(src, r.data)
 	return err
+}
+
+func (r *ReadBuffer) ReadBool() bool {
+	return r.ReadUint8() == 1
 }
 
 func (r *ReadBuffer) ReadUint8() uint8 {
@@ -54,6 +59,14 @@ func (r *ReadBuffer) ReadUint64() uint64 {
 func (r *ReadBuffer) ReadVarInt() int {
 	v, _ := ReadVarInt(r)
 	return int(v)
+}
+
+func (r *ReadBuffer) ReadFloat32() float32 {
+	return math.Float32frombits(r.ReadUint32())
+}
+
+func (r *ReadBuffer) ReadFloat64() float64 {
+	return math.Float64frombits(r.ReadUint64())
 }
 
 func (r *ReadBuffer) ReadString() string {

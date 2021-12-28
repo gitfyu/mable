@@ -1,7 +1,7 @@
 package mable
 
 import (
-	"github.com/gitfyu/mable/entity"
+	"github.com/gitfyu/mable/entity/player"
 	"github.com/gitfyu/mable/protocol/packet/play"
 	"github.com/gitfyu/mable/world"
 	"github.com/google/uuid"
@@ -9,7 +9,7 @@ import (
 
 // handlePlay creates the player and handles all packets until the connection is closed
 func handlePlay(c *conn, username string, id uuid.UUID) error {
-	p := entity.NewPlayer(username, id, c)
+	p := player.NewPlayer(username, id, c, world.Default)
 	defer p.Destroy()
 
 	c.WritePacket(&play.OutJoinGame{
@@ -21,11 +21,10 @@ func handlePlay(c *conn, username string, id uuid.UUID) error {
 		LevelType:     "flat",
 		ReduceDbgInfo: false,
 	})
-	p.SetPos(world.Pos{
-		World: world.Default,
-		X:     8,
-		Y:     16,
-		Z:     8,
+	p.Teleport(world.Pos{
+		X: 8,
+		Y: 16,
+		Z: 8,
 	})
 
 	for c.IsOpen() {

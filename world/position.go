@@ -1,7 +1,6 @@
 package world
 
 type Pos struct {
-	World *World
 	X     float64
 	Y     float64
 	Z     float64
