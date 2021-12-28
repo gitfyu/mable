@@ -18,6 +18,5 @@ func (c *OutChunkData) MarshalPacket(w *protocol.WriteBuffer) {
 	w.WriteUint32(uint32(c.Z))
 	w.WriteBool(c.FullChunk)
 	w.WriteUint16(c.Mask)
-	w.WriteVarInt(int32(len(c.Data)))
-	w.WriteBytes(c.Data)
+	w.WriteByteArrayWithLength(c.Data)
 }
