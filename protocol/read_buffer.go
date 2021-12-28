@@ -11,8 +11,11 @@ type ReadBuffer struct {
 }
 
 func (r *ReadBuffer) ReadAll(src io.Reader, n int) error {
-	// TODO reuse existing data if big enough
-	r.data = make([]byte, n)
+	if cap(r.data) >= n {
+		r.data = r.data[:n]
+	} else {
+		r.data = make([]byte, n)
+	}
 	_, err := io.ReadFull(src, r.data)
 	return err
 }
