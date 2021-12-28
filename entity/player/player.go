@@ -31,18 +31,16 @@ type Player struct {
 	world     *world.World
 	worldLock sync.RWMutex
 	pos       world.Pos
-	destroyed chan struct{}
 }
 
 // NewPlayer constructs a new player
 func NewPlayer(name string, uid uuid.UUID, conn Conn, w *world.World) *Player {
 	p := &Player{
-		id:        entity.NewID(),
-		name:      name,
-		uid:       uid,
-		conn:      conn,
-		world:     w,
-		destroyed: make(chan struct{}),
+		id:    entity.NewID(),
+		name:  name,
+		uid:   uid,
+		conn:  conn,
+		world: w,
 	}
 	w.AddEntity(p)
 	return p
@@ -52,11 +50,11 @@ func (p *Player) GetEntityID() entity.ID {
 	return p.id
 }
 
-// Destroy should be called to clean up resources when this Player is no longer needed. The Player should not be used
-// again afterwards.
-func (p *Player) Destroy() {
+// Close releases resources associated with the Player. This function should only be called once and will always return
+// nil.
+func (p *Player) Close() error {
 	p.SetWorld(nil)
-	close(p.destroyed)
+	return nil
 }
 
 func (p *Player) SetWorld(w *world.World) {
