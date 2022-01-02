@@ -3,7 +3,7 @@ package mable
 import (
 	"errors"
 	"github.com/gitfyu/mable/protocol"
-	"github.com/gitfyu/mable/protocol/packet/handshake"
+	"github.com/gitfyu/mable/protocol/packet/inbound/handshake"
 )
 
 // handleHandshake processes the handshake packet

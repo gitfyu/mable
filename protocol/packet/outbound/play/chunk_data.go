@@ -2,18 +2,18 @@ package play
 
 import "github.com/gitfyu/mable/protocol"
 
-type OutChunkData struct {
+type ChunkData struct {
 	X, Z      int32
 	FullChunk bool
 	Mask      uint16
 	Data      []byte
 }
 
-func (_ OutChunkData) PacketID() uint {
+func (_ ChunkData) PacketID() uint {
 	return 0x21
 }
 
-func (c *OutChunkData) MarshalPacket(w *protocol.WriteBuffer) {
+func (c *ChunkData) MarshalPacket(w *protocol.WriteBuffer) {
 	w.WriteUint32(uint32(c.X))
 	w.WriteUint32(uint32(c.Z))
 	w.WriteBool(c.FullChunk)

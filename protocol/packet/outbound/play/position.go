@@ -4,17 +4,17 @@ import (
 	"github.com/gitfyu/mable/protocol"
 )
 
-type OutPosition struct {
+type Position struct {
 	X, Y, Z    float64
 	Yaw, Pitch float32
 	Flags      uint8
 }
 
-func (_ OutPosition) PacketID() uint {
+func (_ Position) PacketID() uint {
 	return 0x08
 }
 
-func (p *OutPosition) MarshalPacket(w *protocol.WriteBuffer) {
+func (p *Position) MarshalPacket(w *protocol.WriteBuffer) {
 	w.WriteFloat64(p.X)
 	w.WriteFloat64(p.Y)
 	w.WriteFloat64(p.Z)

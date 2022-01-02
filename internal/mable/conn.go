@@ -5,7 +5,7 @@ import (
 	"github.com/gitfyu/mable/chat"
 	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/packet"
-	"github.com/gitfyu/mable/protocol/packet/login"
+	"github.com/gitfyu/mable/protocol/packet/outbound/login"
 	"github.com/rs/zerolog/log"
 	"net"
 	"sync/atomic"

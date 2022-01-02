@@ -5,7 +5,7 @@ import (
 	"github.com/gitfyu/mable/entity"
 	"github.com/gitfyu/mable/protocol"
 	"github.com/gitfyu/mable/protocol/packet"
-	"github.com/gitfyu/mable/protocol/packet/play"
+	outbound "github.com/gitfyu/mable/protocol/packet/outbound/play"
 	"github.com/gitfyu/mable/world"
 	"github.com/gitfyu/mable/world/biome"
 	"github.com/google/uuid"
@@ -72,7 +72,7 @@ func (p *Player) SetWorld(w *world.World) {
 }
 
 func (p *Player) Tick() {
-	p.conn.WritePacket(&play.OutKeepAlive{
+	p.conn.WritePacket(&outbound.KeepAlive{
 		ID: 0,
 	})
 }
@@ -80,7 +80,7 @@ func (p *Player) Tick() {
 // Teleport changes the player' position
 func (p *Player) Teleport(pos world.Pos) {
 	p.pos = pos
-	p.conn.WritePacket(&play.OutPosition{
+	p.conn.WritePacket(&outbound.Position{
 		X:     pos.X,
 		Y:     pos.Y + EyeHeight,
 		Z:     pos.Z,
@@ -92,7 +92,7 @@ func (p *Player) Teleport(pos world.Pos) {
 // TODO currently the actual data being sent is hardcoded, in the future it should be passed as a parameter
 
 func (p *Player) SendChunkData(chunkX, chunkZ int32, c *world.Chunk) {
-	pk := play.OutChunkData{
+	pk := outbound.ChunkData{
 		X:         chunkX,
 		Z:         chunkZ,
 		FullChunk: true,

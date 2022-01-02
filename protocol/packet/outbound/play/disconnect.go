@@ -5,14 +5,14 @@ import (
 	"github.com/gitfyu/mable/protocol"
 )
 
-type OutDisconnect struct {
+type Disconnect struct {
 	Reason *chat.Msg
 }
 
-func (_ OutDisconnect) PacketID() uint {
+func (_ Disconnect) PacketID() uint {
 	return 0x40
 }
 
-func (s *OutDisconnect) MarshalPacket(w *protocol.WriteBuffer) {
+func (s *Disconnect) MarshalPacket(w *protocol.WriteBuffer) {
 	w.WriteChat(s.Reason)
 }

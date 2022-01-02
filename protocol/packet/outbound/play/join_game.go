@@ -2,7 +2,7 @@ package play
 
 import "github.com/gitfyu/mable/protocol"
 
-type OutJoinGame struct {
+type JoinGame struct {
 	EntityID      int
 	Gamemode      uint8
 	Dimension     int8
@@ -12,11 +12,11 @@ type OutJoinGame struct {
 	ReduceDbgInfo bool
 }
 
-func (_ OutJoinGame) PacketID() uint {
+func (_ JoinGame) PacketID() uint {
 	return 0x01
 }
 
-func (c *OutJoinGame) MarshalPacket(w *protocol.WriteBuffer) {
+func (c *JoinGame) MarshalPacket(w *protocol.WriteBuffer) {
 	w.WriteUint32(uint32(c.EntityID))
 	w.WriteUint8(c.Gamemode)
 	w.WriteUint8(uint8(c.Dimension))

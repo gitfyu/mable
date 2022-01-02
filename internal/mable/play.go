@@ -2,7 +2,7 @@ package mable
 
 import (
 	"github.com/gitfyu/mable/entity/player"
-	"github.com/gitfyu/mable/protocol/packet/play"
+	"github.com/gitfyu/mable/protocol/packet/outbound/play"
 	"github.com/gitfyu/mable/world"
 	"github.com/google/uuid"
 )
@@ -12,7 +12,7 @@ func handlePlay(c *conn, username string, id uuid.UUID) error {
 	p := player.NewPlayer(username, id, c, world.Default)
 	defer p.Close()
 
-	c.WritePacket(&play.OutJoinGame{
+	c.WritePacket(&play.JoinGame{
 		EntityID:      int(p.GetEntityID()),
 		Gamemode:      1,
 		Dimension:     0,

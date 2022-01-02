@@ -2,7 +2,8 @@ package mable
 
 import (
 	"errors"
-	"github.com/gitfyu/mable/protocol/packet/status"
+	inbound "github.com/gitfyu/mable/protocol/packet/inbound/status"
+	outbound "github.com/gitfyu/mable/protocol/packet/outbound/status"
 )
 
 // TODO implement a way to properly generate the JSON response in the future
@@ -15,7 +16,7 @@ func handleStatus(c *conn) error {
 		return err
 	}
 
-	c.WritePacket(&status.Response{
+	c.WritePacket(&outbound.Response{
 		Content: defaultResponse,
 	})
 
@@ -24,7 +25,7 @@ func handleStatus(c *conn) error {
 		return err
 	}
 
-	c.WritePacket(&status.Pong{
+	c.WritePacket(&outbound.Pong{
 		Time: time,
 	})
 	return nil
@@ -35,7 +36,7 @@ func readStatusRequest(c *conn) error {
 	if err != nil {
 		return err
 	}
-	if _, ok := pk.(*status.Request); ok {
+	if _, ok := pk.(*inbound.Request); ok {
 		return errors.New("expected status request")
 	}
 
@@ -48,7 +49,7 @@ func readStatusPing(c *conn) (int64, error) {
 		return 0, err
 	}
 
-	ping, ok := pk.(*status.Ping)
+	ping, ok := pk.(*inbound.Ping)
 	if !ok {
 		return 0, errors.New("expected ping")
 	}

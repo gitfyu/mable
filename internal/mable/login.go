@@ -2,7 +2,8 @@ package mable
 
 import (
 	"errors"
-	"github.com/gitfyu/mable/protocol/packet/login"
+	inbound "github.com/gitfyu/mable/protocol/packet/inbound/login"
+	outbound "github.com/gitfyu/mable/protocol/packet/outbound/login"
 	"github.com/google/uuid"
 )
 
@@ -16,7 +17,7 @@ func handleLogin(c *conn) (string, uuid.UUID, error) {
 	// TODO implement authenticated login
 
 	id := generateOfflineUUID(username)
-	c.WritePacket(&login.Success{
+	c.WritePacket(&outbound.Success{
 		UUID:     id,
 		Username: username,
 	})
@@ -28,7 +29,7 @@ func readLoginStart(c *conn) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	l, ok := pk.(*login.Start)
+	l, ok := pk.(*inbound.Start)
 	if !ok {
 		return "", errors.New("expected login start")
 	}
