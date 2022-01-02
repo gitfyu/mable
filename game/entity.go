@@ -11,6 +11,6 @@ type Entity interface {
 	tick()
 }
 
-func NewID() ID {
+func newEntityID() ID {
 	return ID(atomic.AddInt32(&entityIdCounter, 1))
 }

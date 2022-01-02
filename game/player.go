@@ -34,7 +34,7 @@ type Player struct {
 // NewPlayer constructs a new player
 func NewPlayer(name string, uid uuid.UUID, conn PlayerConn, w *World) *Player {
 	p := &Player{
-		id:    NewID(),
+		id:    newEntityID(),
 		name:  name,
 		uid:   uid,
 		conn:  conn,
