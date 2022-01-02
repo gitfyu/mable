@@ -3,7 +3,7 @@ package main
 import (
 	"errors"
 	"flag"
-	"github.com/gitfyu/mable/internal/mable"
+	"github.com/gitfyu/mable/internal/server"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"net"
@@ -39,11 +39,11 @@ func main() {
 	}
 
 	cfgFile := path.Join(dataDir, "config.toml")
-	cfg := mable.DefaultConfig()
+	cfg := server.DefaultConfig()
 
 	if notExist(cfgFile) {
 		log.Warn().Msg("No config file found, using default config")
-	} else if err := mable.LoadConfig(cfgFile, cfg); err != nil {
+	} else if err := server.LoadConfig(cfgFile, cfg); err != nil {
 		log.Fatal().Err(err).Msg("Failed to load config")
 	}
 
@@ -52,7 +52,7 @@ func main() {
 		log.Warn().Msg("Debug logs are disabled")
 	}
 
-	srv, err := mable.NewServer(cfg)
+	srv, err := server.NewServer(cfg)
 
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to start server")
