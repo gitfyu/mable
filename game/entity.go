@@ -8,7 +8,7 @@ type ID int32
 
 type Entity interface {
 	GetEntityID() ID
-	Tick()
+	tick()
 }
 
 func NewID() ID {

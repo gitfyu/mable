@@ -2,7 +2,6 @@ package game
 
 import (
 	"github.com/gitfyu/mable/block"
-	"sync"
 )
 
 // ChunkPos contains a pair of chunk coordinates
@@ -42,7 +41,6 @@ func (b BlockData) toUint16() uint16 {
 // Chunk represents a 16x16x256 area in a World
 type Chunk struct {
 	listeners  map[uint32]chan<- interface{}
-	lock       sync.RWMutex
 	minSection uint8
 	maxSection uint8
 	blocks     []uint8
@@ -62,9 +60,6 @@ func NewChunk(minSection uint8, maxSection uint8) *Chunk {
 // SetBlock changes a block in the chunk. Note that the coordinates are relative to the chunk, not world coordinates.
 // The function returns true if the block place was successful, false otherwise.
 func (c *Chunk) SetBlock(x, y, z uint8, data BlockData) bool {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
 	sectionIdx := y >> 4
 	if sectionIdx < c.minSection || sectionIdx > c.maxSection {
 		return false
@@ -79,35 +74,23 @@ func (c *Chunk) SetBlock(x, y, z uint8, data BlockData) bool {
 }
 
 func (c *Chunk) WriteBlocks(buf []byte) {
-	c.lock.RLock()
-	defer c.lock.RUnlock()
-
 	copy(buf, c.blocks)
 }
 
 // Subscribe registers the specified channel to receive updates for this Chunk. The specified ID must be unique to the
 // subscriber.
 func (c *Chunk) Subscribe(id uint32, ch chan<- interface{}) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
 	ch <- "Subbed"
 	c.listeners[id] = ch
 }
 
 // Unsubscribe cancels the subscription associated with the specified ID
 func (c *Chunk) Unsubscribe(id uint32) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
 	delete(c.listeners, id)
 }
 
 // Broadcast broadcasts a message to all subscribers of this Chunk
 func (c *Chunk) Broadcast(msg interface{}) {
-	c.lock.RLock()
-	defer c.lock.RUnlock()
-
 	for _, ch := range c.listeners {
 		ch <- msg
 	}

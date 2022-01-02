@@ -1,11 +1,8 @@
 package game
 
 import (
-	"sync"
 	"time"
 )
-
-type SubscriberID int32
 
 // TODO make these configurable
 
@@ -13,11 +10,10 @@ const jobQueueSize = 1000
 const entityTickRate = time.Second
 
 type World struct {
-	chunks       map[ChunkPos]*Chunk
-	entities     map[ID]Entity
-	entitiesLock sync.RWMutex
-	jobs         chan func()
-	done         chan struct{}
+	chunks   map[ChunkPos]*Chunk
+	entities map[ID]Entity
+	jobs     chan func()
+	done     chan struct{}
 }
 
 // NewWorld constructs a new World
@@ -33,17 +29,15 @@ func NewWorld(chunks map[ChunkPos]*Chunk) *World {
 }
 
 func (w *World) AddEntity(e Entity) {
-	w.entitiesLock.Lock()
-	defer w.entitiesLock.Unlock()
-
-	w.entities[e.GetEntityID()] = e
+	w.Schedule(func() {
+		w.entities[e.GetEntityID()] = e
+	})
 }
 
 func (w *World) RemoveEntity(id ID) {
-	w.entitiesLock.Lock()
-	defer w.entitiesLock.Unlock()
-
-	delete(w.entities, id)
+	w.Schedule(func() {
+		delete(w.entities, id)
+	})
 }
 
 // Schedule schedules a job to be executed by this world
@@ -73,11 +67,8 @@ func (w *World) handle() {
 }
 
 func (w *World) tickEntities() {
-	w.entitiesLock.RLock()
-	defer w.entitiesLock.RUnlock()
-
 	for _, e := range w.entities {
-		e.Tick()
+		e.tick()
 	}
 }
 

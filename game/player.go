@@ -69,7 +69,7 @@ func (p *Player) SetWorld(w *World) {
 	}
 }
 
-func (p *Player) Tick() {
+func (p *Player) tick() {
 	p.conn.WritePacket(&outbound.KeepAlive{
 		ID: 0,
 	})
