@@ -6,13 +6,19 @@ import (
 	"runtime/debug"
 )
 
+type Config struct {
+	Addr          string
+	MaxPacketSize int
+	Timeout       int
+}
+
 type Server struct {
-	cfg      *Config
+	cfg      Config
 	listener net.Listener
 }
 
-func NewServer(cfg *Config) (*Server, error) {
-	l, err := net.Listen("tcp", cfg.Address)
+func NewServer(cfg Config) (*Server, error) {
+	l, err := net.Listen("tcp", cfg.Addr)
 	if err != nil {
 		return nil, err
 	}
@@ -21,10 +27,6 @@ func NewServer(cfg *Config) (*Server, error) {
 		cfg:      cfg,
 		listener: l,
 	}, nil
-}
-
-func (s *Server) Config() *Config {
-	return s.cfg
 }
 
 func (s *Server) Addr() net.Addr {
