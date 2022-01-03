@@ -3,7 +3,6 @@ package game
 import (
 	"github.com/gitfyu/mable/internal/protocol/packet"
 	inbound "github.com/gitfyu/mable/internal/protocol/packet/inbound/play"
-	"github.com/rs/zerolog/log"
 )
 
 func (p *Player) HandlePacket(pk packet.Inbound) {
@@ -25,7 +24,6 @@ func (p *Player) handlePacket(pk packet.Inbound) {
 }
 
 func (p *Player) handleKeepAlive(pk *inbound.KeepAlive) {
-	log.Debug().Int("id", pk.ID).Msg("KeepAlive")
 }
 
 func (p *Player) handlePlayer(pk *inbound.Update) {

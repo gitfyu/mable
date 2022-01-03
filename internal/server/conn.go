@@ -6,7 +6,6 @@ import (
 	"github.com/gitfyu/mable/internal/protocol"
 	"github.com/gitfyu/mable/internal/protocol/packet"
 	"github.com/gitfyu/mable/internal/protocol/packet/outbound/login"
-	"github.com/rs/zerolog/log"
 	"net"
 	"sync/atomic"
 	"time"
@@ -52,7 +51,7 @@ func (c *conn) dispatchPackets() {
 	close(c.flushed)
 
 	if err != nil {
-		log.Debug().Err(err).Msg("Dispatch packet")
+		c.serv.logger.Debug("Failed to dispatch packet(s)").Err(err).Log()
 		c.Close()
 	}
 }
@@ -80,7 +79,18 @@ func (c *conn) handle() error {
 			return err
 		}
 
+		c.serv.logger.Info("Player logged in").
+			Str("name", username).
+			Stringer("id", id).
+			Log()
+
 		c.state = protocol.StatePlay
+		defer func() {
+			c.serv.logger.Info("Player disconnected").
+				Str("name", username).
+				Stringer("id", id).
+				Log()
+		}()
 		return handlePlay(c, username, id)
 	default:
 		return errors.New("unknown state")
@@ -111,16 +121,25 @@ func (c *conn) readPacket() (packet.Inbound, error) {
 		return nil, err
 	}
 
-	return c.reader.ReadPacket(c.state)
+	pk, err := c.reader.ReadPacket(c.state)
+	if err == nil {
+		c.serv.logger.Trace("Read packet").Interface("packet", pk).Log()
+	}
+	return pk, err
 }
 
 // WritePacket writes a single packet to the client. This function may be called concurrently.
 func (c *conn) WritePacket(pk packet.Outbound) {
+	c.serv.logger.Trace("Writing packet").Interface("packet", pk).Log()
 	c.writeQueue <- pk
 }
 
 // Disconnect kicks the player with a specified reason
 func (c *conn) Disconnect(reason *chat.Msg) {
+	c.serv.logger.Debug("Disconnecting").
+		Stringer("reason", reason).
+		Log()
+
 	switch c.state {
 	case protocol.StatePlay:
 		c.WritePacket(&login.Disconnect{

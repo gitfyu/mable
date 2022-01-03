@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/rs/zerolog/log"
+	"github.com/gitfyu/mable/log"
 	"net"
 	"runtime/debug"
 )
@@ -10,11 +10,13 @@ type Config struct {
 	Addr          string
 	MaxPacketSize int
 	Timeout       int
+	LogLevel      string
 }
 
 type Server struct {
 	cfg      Config
 	listener net.Listener
+	logger   log.Logger
 }
 
 func NewServer(cfg Config) (*Server, error) {
@@ -26,6 +28,10 @@ func NewServer(cfg Config) (*Server, error) {
 	return &Server{
 		cfg:      cfg,
 		listener: l,
+		logger: log.Logger{
+			Name:     "SERVER",
+			MinLevel: log.LevelFromString(cfg.LogLevel),
+		},
 	}, nil
 }
 
@@ -52,14 +58,22 @@ func (s *Server) handleConn(c net.Conn) {
 		}
 	}()
 
+	s.logger.Debug("New connection").
+		Stringer("src", c.RemoteAddr()).
+		Log()
+
 	h := newConn(s, c)
 	defer h.Close()
 
 	if err := h.handle(); err != nil {
-		log.Debug().
+		s.logger.Debug("Connection error").
 			Err(err).
-			Str("src", c.RemoteAddr().String()).
-			Msg("Connection error")
+			Stringer("src", c.RemoteAddr()).
+			Log()
+	} else {
+		s.logger.Debug("Connection closed").
+			Stringer("src", c.RemoteAddr()).
+			Log()
 	}
 }
 

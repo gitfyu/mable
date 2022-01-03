@@ -4,42 +4,37 @@ import (
 	"errors"
 	"github.com/gitfyu/mable/internal/config"
 	"github.com/gitfyu/mable/internal/server"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
+	"github.com/gitfyu/mable/log"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
 )
 
+var logger = log.Logger{
+	Name: "MAIN",
+}
+
 func main() {
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout})
-
-	if !config.DebugLogs {
-		zerolog.SetGlobalLevel(zerolog.InfoLevel)
-		log.Warn().Msg("Debug logs are disabled")
-	}
-
 	srv, err := server.NewServer(config.Srv)
 
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to start server")
+		logger.Error("Failed to start").Err(err).Log()
+		os.Exit(-1)
 	}
 
-	log.Info().Msgf("Listening on %s", srv.Addr().String())
+	logger.Info("Server started").Log()
 
 	go func() {
 		ch := make(chan os.Signal, 1)
 		signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 
 		<-ch
-		log.Info().Msg("Shutting down")
+		logger.Info("Shutting down").Log()
 		srv.Close()
 	}()
 
 	if err := srv.ListenAndServe(); !errors.Is(err, net.ErrClosed) {
-		log.Fatal().Err(err).Msg("Server execution failed")
+		logger.Error("Server execution failed").Err(err).Log()
 	}
-
-	log.Info().Msg("Goodbye")
 }

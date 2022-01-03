@@ -1,5 +1,7 @@
 package chat
 
+import "strings"
+
 type Style uint8
 
 const (
@@ -21,6 +23,18 @@ type Msg struct {
 	Obfuscated    Style  `json:"obfuscated,omitempty"`
 	Color         Color  `json:"color,omitempty"`
 	Extra         []Msg  `json:"extra,omitempty"`
+}
+
+// String returns the text from this Msg (and optionally extra ones from Msg.Extra) without any additional formatting
+func (m Msg) String() string {
+	var builder strings.Builder
+	builder.WriteString(m.Text)
+
+	for _, extra := range m.Extra {
+		builder.WriteString(extra.Text)
+	}
+
+	return builder.String()
 }
 
 func (s Style) MarshalText() ([]byte, error) {
