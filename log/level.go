@@ -2,6 +2,8 @@ package log
 
 import "strings"
 
+// Level represents a logging level, with Trace being the lowest and Error the highest. The default Level (its zero
+// value) is Info.
 type Level int8
 
 const (
@@ -39,6 +41,8 @@ func LevelFromString(str string) Level {
 	}
 }
 
-func (l Level) str() string {
+// String returns the string representation of a Level. The returned string will always be 5 characters long, shorter
+// level names are padded with a space at the end.
+func (l Level) String() string {
 	return levelStrings[l+2]
 }

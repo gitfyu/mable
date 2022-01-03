@@ -25,6 +25,7 @@ var msgPool = sync.Pool{
 	},
 }
 
+// Bool appends a variable of type bool
 func (m *Msg) Bool(key string, val bool) *Msg {
 	if m != nil {
 		if val {
@@ -37,6 +38,7 @@ func (m *Msg) Bool(key string, val bool) *Msg {
 	return m
 }
 
+// Int appends a variable of type int64
 func (m *Msg) Int(key string, val int64) *Msg {
 	if m != nil {
 		m.appendVar(key, strconv.FormatInt(val, 10))
@@ -44,6 +46,7 @@ func (m *Msg) Int(key string, val int64) *Msg {
 	return m
 }
 
+// Uint appends a variable of type uint64
 func (m *Msg) Uint(key string, val uint64) *Msg {
 	if m != nil {
 		m.appendVar(key, strconv.FormatUint(val, 10))
@@ -51,6 +54,7 @@ func (m *Msg) Uint(key string, val uint64) *Msg {
 	return m
 }
 
+// F32 appends a variable of type float32
 func (m *Msg) F32(key string, val float32) *Msg {
 	if m != nil {
 		m.appendVar(key, strconv.FormatFloat(float64(val), 'f', -1, 32))
@@ -58,6 +62,7 @@ func (m *Msg) F32(key string, val float32) *Msg {
 	return m
 }
 
+// F64 appends a variable of type float64
 func (m *Msg) F64(key string, val float64) *Msg {
 	if m != nil {
 		m.appendVar(key, strconv.FormatFloat(val, 'f', -1, 64))
@@ -65,6 +70,7 @@ func (m *Msg) F64(key string, val float64) *Msg {
 	return m
 }
 
+// Str appends a variable of type string
 func (m *Msg) Str(key string, val string) *Msg {
 	if m != nil {
 		m.appendVar(key, val)
@@ -72,6 +78,10 @@ func (m *Msg) Str(key string, val string) *Msg {
 	return m
 }
 
+// Stringer appends a variable whose value should be retrieved from a fmt.Stringer. While you could also manually
+// convert the value to a string and then call Str, this function has the advantage that in the event that this message
+// is dropped (if its level is below the minimum logging level), the string conversion is also skipped, which should
+// result in better performance
 func (m *Msg) Stringer(key string, val fmt.Stringer) *Msg {
 	if m != nil {
 		m.appendVar(key, val.String())
@@ -79,6 +89,7 @@ func (m *Msg) Stringer(key string, val fmt.Stringer) *Msg {
 	return m
 }
 
+// Interface appends a variable whose value is an interface
 func (m *Msg) Interface(key string, val interface{}) *Msg {
 	if m != nil {
 		m.appendVar(key, fmt.Sprintf("%#v", val))
@@ -86,6 +97,7 @@ func (m *Msg) Interface(key string, val interface{}) *Msg {
 	return m
 }
 
+// Err appends an error, using ErrorKey as the variable key
 func (m *Msg) Err(err error) *Msg {
 	if m != nil {
 		m.appendVar(ErrorKey, err.Error())
@@ -135,13 +147,14 @@ func createMsg(lvl Level, name string, msg string) *Msg {
 
 	m := msgPool.Get().(*Msg)
 	m.len = 0
+	lvlStr := lvl.String()
 
 	// len("12:34:56 ERR [" + name + "] " + msg)
-	m.reserve(len(timeFormat) + 1 + len(lvl.str()) + 2 + len(name) + 2 + len(msg))
+	m.reserve(len(timeFormat) + 1 + len(lvlStr) + 2 + len(name) + 2 + len(msg))
 
 	m.append(time.Now().Format(timeFormat))
 	m.appendByte(' ')
-	m.append(lvl.str())
+	m.append(lvlStr)
 	m.append(" [")
 	m.append(name)
 	m.append("] ")
