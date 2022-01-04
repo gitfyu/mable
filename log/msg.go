@@ -143,7 +143,7 @@ func (m *Msg) appendVar(key string, val string) {
 }
 
 func createMsg(lvl Level, name string, msg string) *Msg {
-	const timeFormat = "15:04"
+	const timeFormat = "15:04:05"
 
 	m := msgPool.Get().(*Msg)
 	m.len = 0
