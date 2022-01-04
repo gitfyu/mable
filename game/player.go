@@ -57,7 +57,7 @@ func (p *Player) Close() error {
 	return nil
 }
 
-// SetWorld moves the player to a different World. This function should always be called from the current worlds
+// SetWorld moves the player to a different World. This function should always be called from the current worlds'
 // handler goroutine!
 func (p *Player) SetWorld(w *World) {
 	p.packetLock.Lock()
