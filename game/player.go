@@ -44,7 +44,7 @@ func NewPlayer(name string, uid uuid.UUID, conn PlayerConn, w *World) *Player {
 	return p
 }
 
-func (p *Player) GetEntityID() ID {
+func (p *Player) EntityID() ID {
 	return p.id
 }
 

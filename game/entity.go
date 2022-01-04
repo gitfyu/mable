@@ -7,7 +7,7 @@ var entityIdCounter int32
 type ID int32
 
 type Entity interface {
-	GetEntityID() ID
+	EntityID() ID
 	tick()
 }
 

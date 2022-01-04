@@ -30,7 +30,7 @@ func NewWorld(chunks map[ChunkPos]*Chunk) *World {
 
 func (w *World) AddEntity(e Entity) {
 	w.Schedule(func() {
-		w.entities[e.GetEntityID()] = e
+		w.entities[e.EntityID()] = e
 	})
 }
 

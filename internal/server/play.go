@@ -12,7 +12,7 @@ func handlePlay(c *conn, username string, id uuid.UUID) error {
 	defer p.Close()
 
 	c.WritePacket(&play.JoinGame{
-		EntityID:      int(p.GetEntityID()),
+		EntityID:      int(p.EntityID()),
 		Gamemode:      1,
 		Dimension:     0,
 		Difficulty:    1,
