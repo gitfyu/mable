@@ -14,7 +14,7 @@ func createDefaultWorld() *World {
 	for x := uint8(0); x < 16; x++ {
 		for z := uint8(0); z < 16; z++ {
 			for y := uint8(1); y < 100; y += 5 {
-				c.SetBlock(x, y, z, BlockData{block.Stone, 0})
+				c.SetBlock(x, y, z, block.Stone.ToData())
 			}
 		}
 	}

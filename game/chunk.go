@@ -65,17 +65,6 @@ func (p ChunkPos) Dist(other ChunkPos) int32 {
 	}
 }
 
-// BlockData contains a 12-bit block ID and a 4-bit data value
-type BlockData struct {
-	id   block.ID
-	data uint8
-}
-
-// toUint16 encodes a BlockData value to an uint16, to be used in packets
-func (b BlockData) toUint16() uint16 {
-	return uint16(b.id)<<4 | uint16(b.data)&16
-}
-
 // chunkSection represents a 16-block tall section within a chunk
 type chunkSection struct {
 	blocks [chunkSectionBlocksSize]byte
@@ -109,13 +98,13 @@ func NewChunk() *Chunk {
 
 // SetBlock changes a block in the chunk. Note that the coordinates are relative to the chunk, not world coordinates.
 // Coordinates must all be within the range [0,15] or the function will panic.
-func (c *Chunk) SetBlock(x, y, z uint8, data BlockData) {
+func (c *Chunk) SetBlock(x, y, z uint8, data block.Data) {
 	sectionIdx := y >> 4
 	c.createSectionIfNotExists(sectionIdx)
 
 	section := c.sections[sectionIdx]
 	idx := int(y&15)<<9 | int(z)<<5 | int(x)<<1
-	v := data.toUint16()
+	v := data.ToUint16()
 
 	section.blocks[idx] = uint8(v)
 	section.blocks[idx+1] = uint8(v >> 8)
