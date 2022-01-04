@@ -1,31 +1,44 @@
 package block
 
+// ID represents a 12-bit block ID
 type ID uint16
+
+const (
+	// maxID is the maximum value that can be stored in ID
+	maxID = 1 << 12
+
+	// maxMetadata is the maximum value that can be stored in block metadata
+	maxMetadata = 1 << 4
+)
 
 const (
 	Stone ID = 1
 )
 
-// Data represents a block type with metadata
-type Data struct {
-	// ID is the type of the block
-	ID ID
-
-	// Metadata contains additional data for the block
-	Metadata uint8
-}
+// Data encodes a block ID with metadata
+type Data uint16
 
 // ToUint16 encodes a Data value to an uint16, to be used in packets
-func (b Data) ToUint16() uint16 {
-	return uint16(b.ID)<<4 | uint16(b.Metadata)&16
+func (d Data) ToUint16() uint16 {
+	return uint16(d)
+}
+
+// Type returns the type of block stored in this Data
+func (d Data) Type() ID {
+	return ID(d >> 4)
+}
+
+// Metadata returns the metadata stored in this Data
+func (d Data) Metadata() uint8 {
+	return uint8(d) & 15
 }
 
 // ToData creates a Data value for this block without any metadata
 func (id ID) ToData() Data {
-	return Data{ID: id}
+	return Data(id << 4)
 }
 
 // ToDataWithMetadata creates a Data value for this block with specified metadata
 func (id ID) ToDataWithMetadata(metadata uint8) Data {
-	return Data{ID: id, Metadata: metadata}
+	return Data(id)<<4 | Data(metadata)&15
 }
