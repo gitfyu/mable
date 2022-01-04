@@ -27,5 +27,13 @@ func (p *Player) handleKeepAlive(pk *inbound.KeepAlive) {
 }
 
 func (p *Player) handlePlayer(pk *inbound.Update) {
+	if pk.HasPos {
+		oldChunkPos := ChunkPosFromWorldCoords(p.pos.X, p.pos.Z)
+		newChunkPos := ChunkPosFromWorldCoords(pk.X, pk.Z)
+		p.pos.X, p.pos.Y, p.pos.Z = pk.X, pk.Y, pk.Z
 
+		if oldChunkPos != newChunkPos {
+			p.updateChunks()
+		}
+	}
 }

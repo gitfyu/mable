@@ -20,7 +20,6 @@ func handlePlay(c *conn, username string, id uuid.UUID) error {
 		LevelType:     "flat",
 		ReduceDbgInfo: false,
 	})
-	p.SendChunkData(0, 0, game.DefaultWorld.GetChunk(game.ChunkPos{}))
 	p.Teleport(game.Pos{
 		X: 8,
 		Y: 16,

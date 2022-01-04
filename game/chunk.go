@@ -3,6 +3,7 @@ package game
 import (
 	"github.com/gitfyu/mable/biome"
 	"github.com/gitfyu/mable/block"
+	"math"
 )
 
 const (
@@ -45,6 +46,14 @@ func init() {
 // ChunkPos contains a pair of chunk coordinates
 type ChunkPos struct {
 	X, Z int32
+}
+
+// ChunkPosFromWorldCoords returns the ChunkPos for the given world coordinates
+func ChunkPosFromWorldCoords(x, z float64) ChunkPos {
+	return ChunkPos{
+		X: int32(math.Floor(x / 16)),
+		Z: int32(math.Floor(z / 16)),
+	}
 }
 
 // Dist returns the distance between two ChunkPos values, in chunks
