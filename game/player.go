@@ -20,14 +20,16 @@ type PlayerConn interface {
 
 // Player represents a player entity
 type Player struct {
-	id        ID
-	name      string
-	uid       uuid.UUID
-	conn      PlayerConn
-	world     *World
-	worldLock sync.RWMutex
-	pos       Pos
-	chunks    map[ChunkPos]*Chunk
+	id    ID
+	name  string
+	uid   uuid.UUID
+	conn  PlayerConn
+	world *World
+	// packetLock currently guards world, but only in the HandlePacket and SetWorld functions. All other functions that
+	// access world should be called from the scheduler of the current world.
+	packetLock sync.Mutex
+	pos        Pos
+	chunks     map[ChunkPos]*Chunk
 }
 
 // NewPlayer constructs a new player
@@ -55,9 +57,11 @@ func (p *Player) Close() error {
 	return nil
 }
 
+// SetWorld moves the player to a different World. This function should always be called from the scheduler of the
+// current World!
 func (p *Player) SetWorld(w *World) {
-	p.worldLock.Lock()
-	defer p.worldLock.Unlock()
+	p.packetLock.Lock()
+	defer p.packetLock.Unlock()
 
 	if p.world != nil {
 		p.world.RemoveEntity(p.id)
@@ -113,9 +117,6 @@ func (p *Player) tick() {
 
 // updateChunks updates the chunks map for the player based on their current position
 func (p *Player) updateChunks() {
-	p.worldLock.Lock()
-	defer p.worldLock.Unlock()
-
 	// TODO properly calculate view distance
 	const viewDist = 2
 	center := ChunkPosFromWorldCoords(p.pos.X, p.pos.Z)

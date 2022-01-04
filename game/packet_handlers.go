@@ -6,8 +6,8 @@ import (
 )
 
 func (p *Player) HandlePacket(pk packet.Inbound) {
-	p.worldLock.RLock()
-	defer p.worldLock.RUnlock()
+	p.packetLock.Lock()
+	defer p.packetLock.Unlock()
 
 	p.world.Schedule(func() {
 		p.handlePacket(pk)
