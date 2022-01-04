@@ -20,14 +20,14 @@ func (p *Player) handlePacket(pk packet.Inbound) {
 	case *inbound.KeepAlive:
 		p.handleKeepAlive(pk.(*inbound.KeepAlive))
 	case *inbound.Update:
-		p.handlePlayer(pk.(*inbound.Update))
+		p.handleUpdate(pk.(*inbound.Update))
 	}
 }
 
 func (p *Player) handleKeepAlive(pk *inbound.KeepAlive) {
 }
 
-func (p *Player) handlePlayer(pk *inbound.Update) {
+func (p *Player) handleUpdate(pk *inbound.Update) {
 	if pk.HasPos {
 		oldChunkPos := ChunkPosFromWorldCoords(p.pos.X, p.pos.Z)
 		newChunkPos := ChunkPosFromWorldCoords(pk.X, pk.Z)
