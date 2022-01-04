@@ -1,8 +1,46 @@
 package game
 
 import (
+	"github.com/gitfyu/mable/biome"
 	"github.com/gitfyu/mable/block"
 )
+
+const (
+	// chunkSectionBlocksSize is the number of bytes used for block data per chunkSection
+	chunkSectionBlocksSize = 16 * 16 * 16 * 2
+
+	// chunkSectionsPerChunk is the maximum number of chunkSection instances within a single Chunk
+	chunkSectionsPerChunk = 16
+
+	// lightDataSize is the number of bytes used for both block- and skylight data per chunkSection
+	lightDataSize = 16 * 16 * 16 / 2 * 2
+
+	// biomeDataSize is the number of bytes used for biome data in a single Chunk
+	biomeDataSize = 256
+)
+
+var (
+	// cachedLightData contains pre-generated block- and skylight data for a single full-sized chunk
+	cachedLightData [lightDataSize * chunkSectionsPerChunk]byte
+
+	// cachedBiomeData contains pre-generated biome data for a single chunk
+	cachedBiomeData [biomeDataSize]byte
+)
+
+func init() {
+	// I (currently) don't care about light or biome data for chunks, since it is not really relevant for Mable's
+	// intended use case, which means that I can just pre-generate all this data and re-use it for every chunk, instead
+	// of having to recompute it every time.
+
+	const fullBright = 15
+	for i := range cachedLightData {
+		cachedLightData[i] = fullBright<<4 | fullBright
+	}
+
+	for i := range cachedBiomeData {
+		cachedBiomeData[i] = uint8(biome.Plains)
+	}
+}
 
 // ChunkPos contains a pair of chunk coordinates
 type ChunkPos struct {
@@ -38,43 +76,83 @@ func (b BlockData) toUint16() uint16 {
 	return uint16(b.id)<<4 | uint16(b.data)&16
 }
 
-// Chunk represents a 16x16x256 area in a World
-type Chunk struct {
-	listeners  map[uint32]chan<- interface{}
-	minSection uint8
-	maxSection uint8
-	blocks     []uint8
+// chunkSection represents a 16-block tall section within a chunk
+type chunkSection struct {
+	blocks [chunkSectionBlocksSize]byte
 }
 
-// NewChunk constructs a new Chunk, where minSection is the index of the lowest section and maxSection the index of the
-// highest section (index 0 refers to Y 0-15, index 1 refers to Y 16-31, etc.)
-func NewChunk(minSection uint8, maxSection uint8) *Chunk {
+// Chunk represents a 16x16x256 area in a World
+type Chunk struct {
+	listeners map[uint32]chan<- interface{}
+
+	// sectionMask is a bitmask where the nth bit indicates if sections[n] is set
+	sectionMask uint16
+
+	// sectionCount is the number of chunkSection instances stored in sections
+	sectionCount int
+
+	// sections contains all chunkSection instances for this Chunk. It is possible that not all indices contain a
+	// chunkSection, in which case they will be nil.
+	sections [chunkSectionsPerChunk]*chunkSection
+
+	// dataSize is the total size required for the buffer that should be passed to writeData
+	dataSize int
+}
+
+// NewChunk constructs a new Chunk
+func NewChunk() *Chunk {
 	return &Chunk{
-		listeners:  make(map[uint32]chan<- interface{}),
-		minSection: minSection,
-		maxSection: maxSection,
-		blocks:     make([]uint8, 2*16*16*16*int(maxSection-minSection+1)),
+		listeners: make(map[uint32]chan<- interface{}),
+		dataSize:  biomeDataSize,
 	}
 }
 
 // SetBlock changes a block in the chunk. Note that the coordinates are relative to the chunk, not world coordinates.
-// The function returns true if the block place was successful, false otherwise.
-func (c *Chunk) SetBlock(x, y, z uint8, data BlockData) bool {
+// Coordinates must all be within the range [0,15] or the function will panic.
+func (c *Chunk) SetBlock(x, y, z uint8, data BlockData) {
 	sectionIdx := y >> 4
-	if sectionIdx < c.minSection || sectionIdx > c.maxSection {
-		return false
-	}
+	c.createSectionIfNotExists(sectionIdx)
 
-	idx := int(sectionIdx-c.minSection)<<13 | int(y&15)<<9 | int(z)<<5 | int(x)<<1
+	section := c.sections[sectionIdx]
+	idx := int(y&15)<<9 | int(z)<<5 | int(x)<<1
 	v := data.toUint16()
 
-	c.blocks[idx] = uint8(v)
-	c.blocks[idx+1] = uint8(v >> 8)
-	return true
+	section.blocks[idx] = uint8(v)
+	section.blocks[idx+1] = uint8(v >> 8)
 }
 
-func (c *Chunk) WriteBlocks(buf []byte) {
-	copy(buf, c.blocks)
+// createSectionIfNotExists creates and stores a new chunkSection at the specified index if it does not exist yet
+func (c *Chunk) createSectionIfNotExists(index uint8) {
+	if c.sectionMask&(1<<index) != 0 {
+		return
+	}
+
+	c.sectionCount++
+	c.sectionMask |= 1 << index
+	c.sections[index] = new(chunkSection)
+	c.dataSize += chunkSectionBlocksSize + lightDataSize
+}
+
+// writeData will write the data for this chunk to the buffer, to be sent in a packet. The required size of the buffer
+// is specified in Chunk.dataSize, a smaller buffer will cause the function to panic.
+func (c *Chunk) writeData(buf []byte) {
+	off := 0
+
+	// blocks
+	for i := 0; i < chunkSectionsPerChunk; i++ {
+		if c.sectionMask&(1<<i) != 0 {
+			copy(buf[off:], c.sections[i].blocks[:])
+			off += chunkSectionBlocksSize
+		}
+	}
+
+	// light
+	lightDataSize := lightDataSize * c.sectionCount
+	copy(buf[off:], cachedLightData[:lightDataSize])
+	off += lightDataSize
+
+	// biomes
+	copy(buf[off:], cachedBiomeData[:])
 }
 
 // Subscribe registers the specified channel to receive updates for this Chunk. The specified ID must be unique to the

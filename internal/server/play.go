@@ -8,7 +8,7 @@ import (
 
 // handlePlay creates the player and handles all packets until the connection is closed
 func handlePlay(c *conn, username string, id uuid.UUID) error {
-	p := game.NewPlayer(username, id, c, game.Default)
+	p := game.NewPlayer(username, id, c, game.DefaultWorld)
 	defer p.Close()
 
 	c.WritePacket(&play.JoinGame{
@@ -20,6 +20,7 @@ func handlePlay(c *conn, username string, id uuid.UUID) error {
 		LevelType:     "flat",
 		ReduceDbgInfo: false,
 	})
+	p.SendChunkData(0, 0, game.DefaultWorld.GetChunk(game.ChunkPos{}))
 	p.Teleport(game.Pos{
 		X: 8,
 		Y: 16,

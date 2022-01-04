@@ -1,9 +1,7 @@
 package game
 
 import (
-	"github.com/gitfyu/mable/biome"
 	"github.com/gitfyu/mable/chat"
-	"github.com/gitfyu/mable/internal/protocol"
 	"github.com/gitfyu/mable/internal/protocol/packet"
 	outbound "github.com/gitfyu/mable/internal/protocol/packet/outbound/play"
 	"github.com/google/uuid"
@@ -94,30 +92,10 @@ func (p *Player) SendChunkData(chunkX, chunkZ int32, c *Chunk) {
 		X:         chunkX,
 		Z:         chunkZ,
 		FullChunk: true,
-		Mask:      1,
-		Data:      make([]byte, protocol.ChunkDataSize(1)),
+		Mask:      c.sectionMask,
+		Data:      make([]byte, c.dataSize),
 	}
 
-	// TODO this code currently assumes that the chunk will only write one section, which is not always the case
-	c.WriteBlocks(pk.Data)
-	off := 16 * 16 * 16 * 2
-
-	// block light
-	for i := 0; i < protocol.LightDataSize; i++ {
-		pk.Data[off+i] = protocol.FullBright<<4 | protocol.FullBright
-	}
-	off += protocol.LightDataSize
-
-	// skylight
-	for i := 0; i < protocol.LightDataSize; i++ {
-		pk.Data[off+i] = protocol.FullBright<<4 | protocol.FullBright
-	}
-	off += protocol.LightDataSize
-
-	// biomes
-	for i := 0; i < 256; i++ {
-		pk.Data[off+i] = uint8(biome.Plains)
-	}
-
+	c.writeData(pk.Data)
 	p.conn.WritePacket(&pk)
 }
