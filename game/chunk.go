@@ -21,11 +21,8 @@ const (
 )
 
 var (
-	// cachedLightData contains pre-generated block- and skylight data for a single full-sized chunk.
-	cachedLightData [lightDataSize * chunkSectionsPerChunk]byte
-
-	// cachedBiomeData contains pre-generated biome data for a single chunk.
-	cachedBiomeData [biomeDataSize]byte
+	// cachedLightAndBiomeData contains pre-generated light and biome data for a single full-sized chunk.
+	cachedLightAndBiomeData [lightDataSize*chunkSectionsPerChunk + biomeDataSize]byte
 )
 
 func init() {
@@ -34,12 +31,15 @@ func init() {
 	// of having to recompute it every time.
 
 	const fullBright = 15
-	for i := range cachedLightData {
-		cachedLightData[i] = fullBright<<4 | fullBright
+
+	// light
+	for i := 0; i < lightDataSize*chunkSectionsPerChunk; i++ {
+		cachedLightAndBiomeData[i] = fullBright<<4 | fullBright
 	}
 
-	for i := range cachedBiomeData {
-		cachedBiomeData[i] = uint8(biome.Plains)
+	// biomes
+	for i := lightDataSize * chunkSectionsPerChunk; i < lightDataSize*chunkSectionsPerChunk+biomeDataSize; i++ {
+		cachedLightAndBiomeData[i] = uint8(biome.Plains)
 	}
 }
 
@@ -143,13 +143,10 @@ func (c *Chunk) writeData(buf []byte) {
 		}
 	}
 
-	// light
-	lightDataSize := lightDataSize * c.sectionCount
-	copy(buf[off:], cachedLightData[:lightDataSize])
-	off += lightDataSize
-
-	// biomes
-	copy(buf[off:], cachedBiomeData[:])
+	// light and biome data
+	copy(buf[off:],
+		cachedLightAndBiomeData[len(cachedLightAndBiomeData)-lightDataSize*c.sectionCount+biomeDataSize:],
+	)
 }
 
 // Subscribe registers the specified channel to receive updates for this Chunk. The specified ID must be unique to the
