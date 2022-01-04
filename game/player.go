@@ -54,7 +54,9 @@ func (p *Player) EntityID() ID {
 // Close releases resources associated with the Player. This function should only be called once and will always return
 // nil.
 func (p *Player) Close() error {
-	p.SetWorld(nil)
+	p.world.Schedule(func() {
+		p.SetWorld(nil)
+	})
 	return nil
 }
 
