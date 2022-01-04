@@ -4,14 +4,7 @@ import (
 	"fmt"
 	"github.com/gitfyu/mable/internal/protocol"
 	"io"
-	"sync"
 )
-
-var writeBufPool = sync.Pool{
-	New: func() interface{} {
-		return new(protocol.WriteBuffer)
-	},
-}
 
 // Writer is used to write packets.
 type Writer struct {
@@ -39,8 +32,8 @@ func (w *Writer) writeVarInt(v int32) error {
 
 // WritePacket writes a single packet, including its length and id.
 func (w *Writer) WritePacket(pk Outbound) error {
-	buf := writeBufPool.Get().(*protocol.WriteBuffer)
-	defer writeBufPool.Put(buf)
+	buf := protocol.AcquireWriteBuffer()
+	defer protocol.ReleaseWriteBuffer(buf)
 
 	buf.Reset()
 	buf.WriteVarInt(int32(pk.PacketID()))

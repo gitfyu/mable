@@ -4,6 +4,11 @@ import (
 	"encoding/json"
 	"github.com/gitfyu/mable/chat"
 	"math"
+	"sync"
+)
+
+const (
+	defaultWriteBufSize = 32
 )
 
 // WriteBuffer is a utility for writing data types commonly used in packets. Afterwards, its contents can be converted
@@ -11,6 +16,25 @@ import (
 type WriteBuffer struct {
 	data      []byte
 	varIntBuf [VarIntMaxBytes]byte
+}
+
+var writeBufPool = sync.Pool{
+	New: func() interface{} {
+		return &WriteBuffer{
+			data: make([]byte, 0, defaultWriteBufSize),
+		}
+	},
+}
+
+// AcquireWriteBuffer obtains a new WriteBuffer, which should later be released using ReleaseWriteBuffer.
+func AcquireWriteBuffer() *WriteBuffer {
+	return writeBufPool.Get().(*WriteBuffer)
+}
+
+// ReleaseWriteBuffer releases resources used for a WriteBuffer. You should call this after you are done using a buffer,
+// after which you should not use the buffer again.
+func ReleaseWriteBuffer(w *WriteBuffer) {
+	writeBufPool.Put(w)
 }
 
 // Reset resets the buffers contents.

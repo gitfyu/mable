@@ -10,6 +10,8 @@ import (
 const (
 	// ErrorKey is the key that will be used for the error variable in Msg.Err.
 	ErrorKey = "err"
+
+	defaultMsgBufSize = 64
 )
 
 // Msg represents a log message. You should not construct a Msg yourself, instead use a Logger to create them. All
@@ -20,7 +22,9 @@ type Msg struct {
 
 var msgPool = sync.Pool{
 	New: func() interface{} {
-		return new(Msg)
+		return &Msg{
+			buf: make([]byte, 0, defaultMsgBufSize),
+		}
 	},
 }
 
