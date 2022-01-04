@@ -6,6 +6,7 @@ import (
 	"runtime/debug"
 )
 
+// Config is used to configure a Server.
 type Config struct {
 	Addr          string
 	MaxPacketSize int
@@ -35,6 +36,7 @@ func NewServer(cfg Config) (*Server, error) {
 	}, nil
 }
 
+// Addr returns the address that the server is listening on.
 func (s *Server) Addr() net.Addr {
 	return s.listener.Addr()
 }
@@ -51,6 +53,7 @@ func (s *Server) ListenAndServe() error {
 	}
 }
 
+// handleConn handles a single client connection. It returns when the connection is closed.
 func (s *Server) handleConn(c net.Conn) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -77,7 +80,7 @@ func (s *Server) handleConn(c net.Conn) {
 	}
 }
 
-// Close stops the server
+// Close stops the server.
 func (s *Server) Close() error {
 	return s.listener.Close()
 }

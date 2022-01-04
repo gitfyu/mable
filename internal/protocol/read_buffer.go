@@ -11,6 +11,7 @@ type ReadBuffer struct {
 	data []byte
 }
 
+// ReadAll reads exactly n bytes from an io.Reader.
 func (r *ReadBuffer) ReadAll(src io.Reader, n int) error {
 	if cap(r.data) >= n {
 		r.data = r.data[:n]

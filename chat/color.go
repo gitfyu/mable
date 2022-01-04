@@ -4,7 +4,7 @@ import "errors"
 
 var errInvalidColor = errors.New("invalid color")
 
-// Color represents a color code used in a Msg
+// Color represents a color used in a Msg.
 type Color uint8
 
 const (
@@ -48,6 +48,7 @@ var colorNames = [][]byte{
 	[]byte("white"),
 }
 
+// MarshalText implements encoding.TextMarshaler.
 func (c Color) MarshalText() ([]byte, error) {
 	if c < 0 || int(c) > len(colorNames) {
 		return nil, errInvalidColor

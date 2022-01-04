@@ -7,24 +7,24 @@ import (
 )
 
 const (
-	// chunkSectionBlocksSize is the number of bytes used for block data per chunkSection
+	// chunkSectionBlocksSize is the number of bytes used for block data per chunkSection.
 	chunkSectionBlocksSize = 16 * 16 * 16 * 2
 
-	// chunkSectionsPerChunk is the maximum number of chunkSection instances within a single Chunk
+	// chunkSectionsPerChunk is the maximum number of chunkSection instances within a single Chunk.
 	chunkSectionsPerChunk = 16
 
-	// lightDataSize is the number of bytes used for both block- and skylight data per chunkSection
+	// lightDataSize is the number of bytes used for both block- and skylight data per chunkSection.
 	lightDataSize = 16 * 16 * 16 / 2 * 2
 
-	// biomeDataSize is the number of bytes used for biome data in a single Chunk
+	// biomeDataSize is the number of bytes used for biome data in a single Chunk.
 	biomeDataSize = 256
 )
 
 var (
-	// cachedLightData contains pre-generated block- and skylight data for a single full-sized chunk
+	// cachedLightData contains pre-generated block- and skylight data for a single full-sized chunk.
 	cachedLightData [lightDataSize * chunkSectionsPerChunk]byte
 
-	// cachedBiomeData contains pre-generated biome data for a single chunk
+	// cachedBiomeData contains pre-generated biome data for a single chunk.
 	cachedBiomeData [biomeDataSize]byte
 )
 
@@ -43,12 +43,12 @@ func init() {
 	}
 }
 
-// ChunkPos contains a pair of chunk coordinates
+// ChunkPos contains a pair of chunk coordinates.
 type ChunkPos struct {
 	X, Z int32
 }
 
-// ChunkPosFromWorldCoords returns the ChunkPos for the given world coordinates
+// ChunkPosFromWorldCoords returns the ChunkPos for the given world coordinates.
 func ChunkPosFromWorldCoords(x, z float64) ChunkPos {
 	return ChunkPos{
 		X: int32(math.Floor(x / 16)),
@@ -56,7 +56,8 @@ func ChunkPosFromWorldCoords(x, z float64) ChunkPos {
 	}
 }
 
-// Dist returns the distance between two ChunkPos values, in chunks
+// Dist returns the distance between two ChunkPos values, in chunks. Note that this is not the euclidean distance,
+// instead it is computed as max(abs(x1-x2), abs(z1-z2)).
 func (p ChunkPos) Dist(other ChunkPos) int32 {
 	dx := p.X - other.X
 	if dx < 0 {
@@ -74,28 +75,28 @@ func (p ChunkPos) Dist(other ChunkPos) int32 {
 	}
 }
 
-// chunkSection represents a 16-block tall section within a chunk
+// chunkSection represents a 16-block tall section within a chunk.
 type chunkSection [chunkSectionBlocksSize]byte
 
-// Chunk represents a 16x16x256 area in a World
+// Chunk represents a 16x16x256 area in a World.
 type Chunk struct {
 	listeners map[uint32]chan<- interface{}
 
-	// sectionMask is a bitmask where the nth bit indicates if sections[n] is set
+	// sectionMask is a bitmask where the nth bit indicates if sections[n] is set.
 	sectionMask uint16
 
-	// sectionCount is the number of chunkSection instances stored in sections
+	// sectionCount is the number of chunkSection instances stored in sections.
 	sectionCount int
 
 	// sections contains all chunkSection instances for this Chunk. It is possible that not all indices contain a
 	// chunkSection, in which case they will be nil.
 	sections [chunkSectionsPerChunk]*chunkSection
 
-	// dataSize is the total size required for the buffer that should be passed to writeData
+	// dataSize is the total size required for the buffer that should be passed to writeData.
 	dataSize int
 }
 
-// NewChunk constructs a new Chunk
+// NewChunk constructs a new Chunk.
 func NewChunk() *Chunk {
 	return &Chunk{
 		listeners: make(map[uint32]chan<- interface{}),
@@ -117,7 +118,7 @@ func (c *Chunk) SetBlock(x, y, z uint8, data block.Data) {
 	section[idx+1] = uint8(v >> 8)
 }
 
-// createSectionIfNotExists creates and stores a new chunkSection at the specified index if it does not exist yet
+// createSectionIfNotExists creates and stores a new chunkSection at the specified index if it does not exist yet.
 func (c *Chunk) createSectionIfNotExists(index uint8) {
 	if c.sectionMask&(1<<index) != 0 {
 		return
@@ -158,12 +159,12 @@ func (c *Chunk) Subscribe(id uint32, ch chan<- interface{}) {
 	c.listeners[id] = ch
 }
 
-// Unsubscribe cancels the subscription associated with the specified ID
+// Unsubscribe cancels the subscription associated with the specified ID.
 func (c *Chunk) Unsubscribe(id uint32) {
 	delete(c.listeners, id)
 }
 
-// Broadcast broadcasts a message to all subscribers of this Chunk
+// Broadcast broadcasts a message to all subscribers of this Chunk.
 func (c *Chunk) Broadcast(msg interface{}) {
 	for _, ch := range c.listeners {
 		ch <- msg

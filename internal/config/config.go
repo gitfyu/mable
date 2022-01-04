@@ -1,3 +1,5 @@
+// Package config holds the server's configuration values. The values are automatically parsed from command-line
+// flags when this package is initialized.
 package config
 
 import (

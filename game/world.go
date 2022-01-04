@@ -9,6 +9,7 @@ import (
 const jobQueueSize = 1000
 const entityTickRate = time.Second
 
+// World represents a world within the server.
 type World struct {
 	chunks   map[ChunkPos]*Chunk
 	entities map[ID]Entity
@@ -16,7 +17,7 @@ type World struct {
 	done     chan struct{}
 }
 
-// NewWorld constructs a new World
+// NewWorld constructs a new World containing predefined chunks.
 func NewWorld(chunks map[ChunkPos]*Chunk) *World {
 	w := &World{
 		chunks:   chunks,
@@ -28,24 +29,26 @@ func NewWorld(chunks map[ChunkPos]*Chunk) *World {
 	return w
 }
 
+// AddEntity schedules an Entity to be added to this world. This function may be called concurrently.
 func (w *World) AddEntity(e Entity) {
 	w.Schedule(func() {
 		w.entities[e.EntityID()] = e
 	})
 }
 
+// RemoveEntity schedules an Entity to be removed from this world. This function may be called concurrently.
 func (w *World) RemoveEntity(id ID) {
 	w.Schedule(func() {
 		delete(w.entities, id)
 	})
 }
 
-// Schedule schedules a job to be executed by this world
+// Schedule schedules a job to be executed by this world's handler goroutine. This function may be called concurrently.
 func (w *World) Schedule(job func()) {
 	w.jobs <- job
 }
 
-// GetChunk gets the Chunk at the specified position, or nil if it does not exist
+// GetChunk gets the Chunk at the specified position, or nil if it does not exist.
 func (w *World) GetChunk(pos ChunkPos) *Chunk {
 	return w.chunks[pos]
 }
@@ -72,8 +75,7 @@ func (w *World) tickEntities() {
 	}
 }
 
-// Close releases the resources for this World. The Handle function will return after the World is closed. This function
-// may only be called once and always returns nil.
+// Close releases the resources for this World. may only be called once and always returns nil.
 func (w *World) Close() error {
 	close(w.done)
 	return nil

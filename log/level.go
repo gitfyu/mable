@@ -2,16 +2,16 @@ package log
 
 import "strings"
 
-// Level represents a logging level, with Trace being the lowest and Error the highest. The default Level (its zero
-// value) is Info.
+// Level represents a logging level, with TraceLevel being the lowest and ErrorLevel the highest. The default Level (its
+// zero value) is InfoLevel.
 type Level int8
 
 const (
-	Trace Level = iota - 2
-	Debug
-	Info
-	Warn
-	Error
+	TraceLevel Level = iota - 2
+	DebugLevel
+	InfoLevel
+	WarnLevel
+	ErrorLevel
 )
 
 var levelStrings = []string{
@@ -22,22 +22,22 @@ var levelStrings = []string{
 	"ERROR",
 }
 
-// LevelFromString returns the Level corresponding to the given input string. If the input is not recognised, Info
+// LevelFromString returns the Level corresponding to the given input string. If the input is not recognised, InfoLevel
 // will be returned.
 func LevelFromString(str string) Level {
 	switch strings.ToLower(str) {
 	case "trace":
-		return Trace
+		return TraceLevel
 	case "debug":
-		return Debug
+		return DebugLevel
 	case "warn":
-		return Warn
+		return WarnLevel
 	case "error":
-		return Error
+		return ErrorLevel
 	default:
 		fallthrough
 	case "info":
-		return Info
+		return InfoLevel
 	}
 }
 

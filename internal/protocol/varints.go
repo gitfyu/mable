@@ -17,11 +17,12 @@ var (
 // Implementation is based on https://wiki.vg/Protocol#VarInt_and_VarLong and
 // https://github.com/Tnze/go-mc/blob/master/net/packet/types.go
 
-// VarIntSize returns the number of bytes required to write for the given value
+// VarIntSize returns the number of bytes required to write the given value as a VarInt.
 func VarIntSize(v int32) int {
 	return (31-bits.LeadingZeros32(uint32(v)))/7 + 1
 }
 
+// ReadVarInt reads a single VarInt from an io.ByteReader.
 func ReadVarInt(r io.ByteReader) (int32, error) {
 	var v uint32
 	var n int

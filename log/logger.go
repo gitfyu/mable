@@ -1,5 +1,3 @@
-// Package log is designed as a replacement for https://github.com/rs/zerolog to allow efficiently logging in a
-// human-friendly format with a similar, simple API.
 package log
 
 import (
@@ -8,7 +6,7 @@ import (
 )
 
 var (
-	// Writer will receive the log messages, defaults to os.Stdout
+	// Writer will receive the log messages, defaults to os.Stdout.
 	Writer io.Writer = os.Stdout
 
 	// ErrorHandler will be invoked if an error occurs while logging a message. The default function will simply panic.
@@ -17,7 +15,7 @@ var (
 	}
 )
 
-// Logger is used to write messages
+// Logger is used to write messages.
 type Logger struct {
 	// Name is prepended to every message, convention is fully uppercase names
 	Name string
@@ -26,29 +24,29 @@ type Logger struct {
 	MinLevel Level
 }
 
-// Trace is a shortcut for New(Trace, msg)
+// Trace is a shortcut for New(TraceLevel, msg).
 func (l *Logger) Trace(msg string) *Msg {
-	return l.New(Trace, msg)
+	return l.New(TraceLevel, msg)
 }
 
-// Debug is a shortcut for New(Debug, msg)
+// Debug is a shortcut for New(DebugLevel, msg).
 func (l *Logger) Debug(msg string) *Msg {
-	return l.New(Debug, msg)
+	return l.New(DebugLevel, msg)
 }
 
-// Info is a shortcut for New(Info, msg)
+// Info is a shortcut for New(InfoLevel, msg).
 func (l *Logger) Info(msg string) *Msg {
-	return l.New(Info, msg)
+	return l.New(InfoLevel, msg)
 }
 
-// Warn is a shortcut for New(Warn, msg)
+// Warn is a shortcut for New(WarnLevel, msg).
 func (l *Logger) Warn(msg string) *Msg {
-	return l.New(Warn, msg)
+	return l.New(WarnLevel, msg)
 }
 
-// Error is a shortcut for New(Error, msg)
+// Error is a shortcut for New(ErrorLevel, msg).
 func (l *Logger) Error(msg string) *Msg {
-	return l.New(Error, msg)
+	return l.New(ErrorLevel, msg)
 }
 
 // New creates a new Msg with the specified Level. If lvl is below MinLevel, this function does nothing and returns nil.

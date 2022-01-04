@@ -10,15 +10,15 @@ import (
 
 const PlayerEyeHeight = 1.62
 
-// PlayerConn represents a player's network connection
+// PlayerConn represents a player's network connection.
 type PlayerConn interface {
-	// WritePacket sends a packet to the player
+	// WritePacket sends a packet to the player.
 	WritePacket(pk packet.Outbound)
-	// Disconnect kicks the player from the server
+	// Disconnect kicks the player from the server.
 	Disconnect(reason *chat.Msg)
 }
 
-// Player represents a player entity
+// Player represents a player entity.
 type Player struct {
 	id    ID
 	name  string
@@ -32,7 +32,7 @@ type Player struct {
 	chunks     map[ChunkPos]*Chunk
 }
 
-// NewPlayer constructs a new player
+// NewPlayer constructs a new player and adds them to the specified World.
 func NewPlayer(name string, uid uuid.UUID, conn PlayerConn, w *World) *Player {
 	p := &Player{
 		id:     newEntityID(),
@@ -46,6 +46,7 @@ func NewPlayer(name string, uid uuid.UUID, conn PlayerConn, w *World) *Player {
 	return p
 }
 
+// EntityID implements Entity.EntityID.
 func (p *Player) EntityID() ID {
 	return p.id
 }
@@ -57,8 +58,7 @@ func (p *Player) Close() error {
 	return nil
 }
 
-// SetWorld moves the player to a different World. This function should always be called from the current worlds'
-// handler goroutine!
+// SetWorld moves the player to a different World.
 func (p *Player) SetWorld(w *World) {
 	p.packetLock.Lock()
 	defer p.packetLock.Unlock()
@@ -73,7 +73,7 @@ func (p *Player) SetWorld(w *World) {
 	}
 }
 
-// Teleport changes the player' position
+// Teleport moves the player to a new Pos.
 func (p *Player) Teleport(pos Pos) {
 	p.pos = pos
 	p.updateChunks()
@@ -115,7 +115,7 @@ func (p *Player) tick() {
 	})
 }
 
-// updateChunks updates the chunks map for the player based on their current position
+// updateChunks updates the chunks map for the player based on their current position.
 func (p *Player) updateChunks() {
 	// TODO properly calculate view distance
 	const viewDist = 2

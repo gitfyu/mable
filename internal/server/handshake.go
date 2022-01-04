@@ -6,7 +6,8 @@ import (
 	"github.com/gitfyu/mable/internal/protocol/packet/inbound/handshake"
 )
 
-// handleHandshake processes the handshake packet
+// handleHandshake processes the handshake sequence and returns the next protocol.State and the client's protocol
+// version.
 func handleHandshake(c *conn) (protocol.State, uint, error) {
 	pk, err := c.readPacket()
 	if err != nil {

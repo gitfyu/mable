@@ -5,11 +5,11 @@ import "strings"
 type Style uint8
 
 const (
-	// StyleInherit indicates that a style option should be inherited from the parent
+	// StyleInherit indicates that a style option should be inherited from the parent. This is the default behavior.
 	StyleInherit Style = iota
-	// StyleOn enables a style option
+	// StyleOn explicitly enables a style option.
 	StyleOn
-	// StyleOff disables a style option
+	// StyleOff explicitly disables a style option.
 	StyleOff
 )
 
@@ -25,7 +25,7 @@ type Msg struct {
 	Extra         []Msg  `json:"extra,omitempty"`
 }
 
-// String returns the text from this Msg (and optionally extra ones from Msg.Extra) without any additional formatting
+// String returns the text from this Msg (and optionally extra ones from Msg.Extra) without any additional formatting.
 func (m Msg) String() string {
 	var builder strings.Builder
 	builder.WriteString(m.Text)
@@ -37,6 +37,7 @@ func (m Msg) String() string {
 	return builder.String()
 }
 
+// MarshalText implements encoding.TextMarshaler.
 func (s Style) MarshalText() ([]byte, error) {
 	switch s {
 	case StyleOn:

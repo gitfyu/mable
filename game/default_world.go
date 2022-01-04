@@ -6,7 +6,7 @@ import (
 
 // TODO this only exists for testing, will be removed soon
 
-// DefaultWorld is a global default world
+// DefaultWorld is a global default world.
 var DefaultWorld = createDefaultWorld()
 
 func createDefaultWorld() *World {

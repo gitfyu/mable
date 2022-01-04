@@ -13,12 +13,12 @@ var writeBufPool = sync.Pool{
 	},
 }
 
-// Writer is used to write packets
+// Writer is used to write packets.
 type Writer struct {
 	writer io.Writer
 }
 
-// NewWriter constructs a new Writer
+// NewWriter constructs a new Writer.
 func NewWriter(w io.Writer) *Writer {
 	return &Writer{
 		writer: w,
@@ -37,6 +37,7 @@ func (w *Writer) writeVarInt(v int32) error {
 	return nil
 }
 
+// WritePacket writes a single packet, including its length and id.
 func (w *Writer) WritePacket(pk Outbound) error {
 	buf := writeBufPool.Get().(*protocol.WriteBuffer)
 	defer writeBufPool.Put(buf)

@@ -5,6 +5,7 @@ import (
 	inbound "github.com/gitfyu/mable/internal/protocol/packet/inbound/play"
 )
 
+// HandlePacket processes a packet sent by the player. This function should only be used by the server itself.
 func (p *Player) HandlePacket(pk packet.Inbound) {
 	p.packetLock.Lock()
 	defer p.packetLock.Unlock()

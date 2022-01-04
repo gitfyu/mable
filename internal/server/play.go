@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// handlePlay creates the player and handles all packets until the connection is closed
+// handlePlay creates the player and handles all packets until the connection is closed.
 func handlePlay(c *conn, username string, id uuid.UUID) error {
 	p := game.NewPlayer(username, id, c, game.DefaultWorld)
 	defer p.Close()

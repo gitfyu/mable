@@ -1,3 +1,4 @@
+// Package main is responsible for starting the server.
 package main
 
 import (

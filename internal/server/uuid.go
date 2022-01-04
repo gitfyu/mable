@@ -5,7 +5,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// generateOfflineUUID generates a UUID from a username in the same way as the vanilla server
+// generateOfflineUUID generates a UUID from a username in the same way as the vanilla server.
 func generateOfflineUUID(username string) uuid.UUID {
 	b := md5.Sum([]byte("OfflinePlayer:" + username))
 	b[6] &= 0x0f

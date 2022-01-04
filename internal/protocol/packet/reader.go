@@ -13,20 +13,20 @@ var (
 	errBadPacket = errors.New("bad packet")
 )
 
-// ReaderConfig is used to configure settings for a Reader
+// ReaderConfig is used to configure settings for a Reader.
 type ReaderConfig struct {
 	// MaxSize is the maximum size in Bytes per packet. Larger packets will be rejected.
 	MaxSize int
 }
 
-// Reader is used to read packets
+// Reader is used to read packets.
 type Reader struct {
 	reader  *bufio.Reader
 	cfg     ReaderConfig
 	readBuf protocol.ReadBuffer
 }
 
-// NewReader constructs a new Reader that reads from the provided io.Reader
+// NewReader constructs a new Reader that reads from the provided io.Reader.
 func NewReader(r io.Reader, cfg ReaderConfig) *Reader {
 	return &Reader{
 		reader: bufio.NewReader(r),

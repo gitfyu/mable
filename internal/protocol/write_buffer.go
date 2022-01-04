@@ -6,15 +6,19 @@ import (
 	"math"
 )
 
+// WriteBuffer is a utility for writing data types commonly used in packets. Afterwards, its contents can be converted
+// to a byte slice using WriteBuffer.Bytes.
 type WriteBuffer struct {
 	data []byte
 	off  int
 }
 
+// Reset resets the buffers contents.
 func (w *WriteBuffer) Reset() {
 	w.off = 0
 }
 
+// ensureSpace ensures that at least n bytes can be written to the buffer.
 func (w *WriteBuffer) ensureSpace(n int) {
 	if w.off+n > len(w.data) {
 		newData := make([]byte, len(w.data)*2+n)
@@ -108,10 +112,13 @@ func (w *WriteBuffer) WriteChat(msg *chat.Msg) {
 	w.WriteByteArrayWithLength(str)
 }
 
+// Len returns the number of bytes written to the buffer so far.
 func (w *WriteBuffer) Len() int {
 	return w.off
 }
 
+// Bytes returns a view of the contents that have been written so far. The returned slice should not be modified
+// directly and is only valid until the next write to the buffer.
 func (w *WriteBuffer) Bytes() []byte {
 	return w.data[:w.off]
 }

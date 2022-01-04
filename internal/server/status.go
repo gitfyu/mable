@@ -9,8 +9,7 @@ import (
 // TODO implement a way to properly generate the JSON response in the future
 const defaultResponse = `{"version":{"name":"1.7.6-1.8.9","protocol":47},"players":{"max":0,"online":0},"description":{"text":"Hello world"}}`
 
-// handleStatus completes the 'status' flow, which is used by the client to retrieve information to display in the
-// server list
+// handleStatus processes the status flow.
 func handleStatus(c *conn) error {
 	if err := readStatusRequest(c); err != nil {
 		return err

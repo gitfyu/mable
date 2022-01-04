@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// conn represents a client connection.
 type conn struct {
 	serv       *Server
 	conn       net.Conn
@@ -36,6 +37,8 @@ func newConn(s *Server, c net.Conn) *conn {
 	}
 }
 
+// dispatchPackets reads packets from conn.writeQueue and dispatches them until the connection is closed or an error
+// occurs. When Close is called, this function will still dispatch packets that have been queued but not sent yet.
 func (c *conn) dispatchPackets() {
 	var err error
 	for p := range c.writeQueue {
@@ -116,6 +119,7 @@ func (c *conn) IsOpen() bool {
 	return atomic.LoadInt32(&c.closed) == 0
 }
 
+// readPacket reads a single packet from the client.
 func (c *conn) readPacket() (packet.Inbound, error) {
 	if err := c.conn.SetReadDeadline(time.Now().Add(time.Second * time.Duration(c.serv.cfg.Timeout))); err != nil {
 		return nil, err
@@ -134,7 +138,7 @@ func (c *conn) WritePacket(pk packet.Outbound) {
 	c.writeQueue <- pk
 }
 
-// Disconnect kicks the player with a specified reason
+// Disconnect kicks the player with a specified reason.
 func (c *conn) Disconnect(reason *chat.Msg) {
 	c.serv.logger.Debug("Disconnecting").
 		Stringer("reason", reason).
