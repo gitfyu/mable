@@ -16,7 +16,6 @@ const (
 // exported functions can safely be called with a nil receiver, in which case they are no-ops.
 type Msg struct {
 	buf []byte
-	len int
 }
 
 var msgPool = sync.Pool{
@@ -111,62 +110,39 @@ func (m *Msg) Log() {
 		return
 	}
 
-	m.reserve(1)
-	m.appendByte('\n')
-
-	if _, err := Writer.Write(m.buf[:m.len]); err != nil {
+	m.buf = append(m.buf, '\n')
+	if _, err := Writer.Write(m.buf); err != nil {
 		ErrorHandler(err)
 	}
 
 	msgPool.Put(m)
 }
 
-func (m *Msg) appendByte(b byte) {
-	m.buf[m.len] = b
-	m.len++
-}
-
-func (m *Msg) append(b string) {
-	copy(m.buf[m.len:], b)
-	m.len += len(b)
+func (m *Msg) reset() {
+	m.buf = m.buf[:0]
 }
 
 func (m *Msg) appendVar(key string, val string) {
-	// len(" [" + key + "=" + val + "]")
-	m.reserve(2 + len(key) + 1 + len(val) + 1)
-
-	m.append(" [")
-	m.append(key)
-	m.appendByte('=')
-	m.append(val)
-	m.appendByte(']')
+	m.buf = append(m.buf, ' ', '[')
+	m.buf = append(m.buf, key...)
+	m.buf = append(m.buf, '=')
+	m.buf = append(m.buf, val...)
+	m.buf = append(m.buf, ']')
 }
 
 func createMsg(lvl Level, name string, msg string) *Msg {
 	const timeFormat = "15:04:05"
 
 	m := msgPool.Get().(*Msg)
-	m.len = 0
-	lvlStr := lvl.String()
+	m.reset()
 
-	// len("12:34:56 ERR [" + name + "] " + msg)
-	m.reserve(len(timeFormat) + 1 + len(lvlStr) + 2 + len(name) + 2 + len(msg))
-
-	m.append(time.Now().Format(timeFormat))
-	m.appendByte(' ')
-	m.append(lvlStr)
-	m.append(" [")
-	m.append(name)
-	m.append("] ")
-	m.append(msg)
+	m.buf = append(m.buf, time.Now().Format(timeFormat)...)
+	m.buf = append(m.buf, ' ')
+	m.buf = append(m.buf, lvl.String()...)
+	m.buf = append(m.buf, ' ', '[')
+	m.buf = append(m.buf, name...)
+	m.buf = append(m.buf, ']', ' ')
+	m.buf = append(m.buf, msg...)
 
 	return m
-}
-
-func (m *Msg) reserve(n int) {
-	if m.len+n > len(m.buf) {
-		newBuf := make([]byte, len(m.buf)*2+n)
-		copy(newBuf, m.buf)
-		m.buf = newBuf
-	}
 }
