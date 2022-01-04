@@ -5,10 +5,10 @@ type ID uint16
 
 const (
 	// maxID is the maximum value that can be stored in ID
-	maxID = 1 << 12
+	maxID = 1<<12 - 1
 
 	// maxMetadata is the maximum value that can be stored in block metadata
-	maxMetadata = 1 << 4
+	maxMetadata = 1<<4 - 1
 )
 
 const (
