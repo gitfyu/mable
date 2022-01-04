@@ -66,9 +66,7 @@ func (p ChunkPos) Dist(other ChunkPos) int32 {
 }
 
 // chunkSection represents a 16-block tall section within a chunk
-type chunkSection struct {
-	blocks [chunkSectionBlocksSize]byte
-}
+type chunkSection [chunkSectionBlocksSize]byte
 
 // Chunk represents a 16x16x256 area in a World
 type Chunk struct {
@@ -106,8 +104,8 @@ func (c *Chunk) SetBlock(x, y, z uint8, data block.Data) {
 	idx := int(y&15)<<9 | int(z)<<5 | int(x)<<1
 	v := data.ToUint16()
 
-	section.blocks[idx] = uint8(v)
-	section.blocks[idx+1] = uint8(v >> 8)
+	section[idx] = uint8(v)
+	section[idx+1] = uint8(v >> 8)
 }
 
 // createSectionIfNotExists creates and stores a new chunkSection at the specified index if it does not exist yet
@@ -130,7 +128,7 @@ func (c *Chunk) writeData(buf []byte) {
 	// blocks
 	for i := 0; i < chunkSectionsPerChunk; i++ {
 		if c.sectionMask&(1<<i) != 0 {
-			copy(buf[off:], c.sections[i].blocks[:])
+			copy(buf[off:], c.sections[i][:])
 			off += chunkSectionBlocksSize
 		}
 	}
