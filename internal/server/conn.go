@@ -125,16 +125,11 @@ func (c *conn) readPacket() (packet.Inbound, error) {
 		return nil, err
 	}
 
-	pk, err := c.reader.ReadPacket(c.state)
-	if err == nil {
-		c.serv.logger.Trace("Read packet").Interface("packet", pk).Log()
-	}
-	return pk, err
+	return c.reader.ReadPacket(c.state)
 }
 
 // WritePacket writes a single packet to the client. This function may be called concurrently.
 func (c *conn) WritePacket(pk packet.Outbound) {
-	c.serv.logger.Trace("Writing packet").Interface("packet", pk).Log()
 	c.writeQueue <- pk
 }
 
