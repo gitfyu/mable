@@ -85,8 +85,6 @@ func (p *Player) Teleport(pos Pos) {
 	})
 }
 
-// TODO currently the actual data being sent is hardcoded, in the future it should be passed as a parameter
-
 func (p *Player) SendChunkData(chunkX, chunkZ int32, c *Chunk) {
 	pk := outbound.ChunkData{
 		X:         chunkX,
