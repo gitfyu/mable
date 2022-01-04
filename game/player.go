@@ -26,7 +26,7 @@ type Player struct {
 	conn  PlayerConn
 	world *World
 	// packetLock currently guards world, but only in the HandlePacket and SetWorld functions. All other functions that
-	// access world should be called from the scheduler of the current world.
+	// access world should be called from the World.handle goroutine of the current world.
 	packetLock sync.Mutex
 	pos        Pos
 	chunks     map[ChunkPos]*Chunk
@@ -57,8 +57,8 @@ func (p *Player) Close() error {
 	return nil
 }
 
-// SetWorld moves the player to a different World. This function should always be called from the scheduler of the
-// current World!
+// SetWorld moves the player to a different World. This function should always be called from the current worlds
+// handler goroutine!
 func (p *Player) SetWorld(w *World) {
 	p.packetLock.Lock()
 	defer p.packetLock.Unlock()
