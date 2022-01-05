@@ -92,7 +92,7 @@ type Chunk struct {
 	// chunkSection, in which case they will be nil.
 	sections [chunkSectionsPerChunk]*chunkSection
 
-	// dataSize is the total size required for the buffer that should be passed to writeData.
+	// dataSize is the total size required for the buffer that should be passed to appendData.
 	dataSize int
 }
 
@@ -130,20 +130,17 @@ func (c *Chunk) createSectionIfNotExists(index uint8) {
 	c.dataSize += chunkSectionBlocksSize + lightDataSize
 }
 
-// writeData will write the data for this chunk to the buffer, to be sent in a packet. The required size of the buffer
-// is specified in Chunk.dataSize, a smaller buffer will cause the function to panic.
-func (c *Chunk) writeData(buf []byte) {
-	off := 0
-
+// appendData will append the data for this chunk to the buffer, to be sent in a packet. The appended buffer will be
+// returned.
+func (c *Chunk) appendData(buf []byte) []byte {
 	// blocks
 	for i := 0; i < chunkSectionsPerChunk; i++ {
 		if c.sectionMask&(1<<i) != 0 {
-			copy(buf[off:], c.sections[i][:])
-			off += chunkSectionBlocksSize
+			buf = append(buf, c.sections[i][:]...)
 		}
 	}
 
-	copy(buf[off:], cachedLightAndBiomeData[(chunkSectionsPerChunk-c.sectionCount)*lightDataSize:])
+	return append(buf, cachedLightAndBiomeData[(chunkSectionsPerChunk-c.sectionCount)*lightDataSize:]...)
 }
 
 // Subscribe registers the specified channel to receive updates for this Chunk. The specified ID must be unique to the

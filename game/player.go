@@ -88,29 +88,6 @@ func (p *Player) Teleport(pos Pos) {
 	})
 }
 
-// sendChunkData sends a chunk data packet to the player. To unload a chunk, set the chunk parameter to nil.
-func (p *Player) sendChunkData(chunkX, chunkZ int32, chunk *Chunk) {
-	var mask uint16
-	var data []byte
-
-	if chunk != nil {
-		mask = chunk.sectionMask
-		data = make([]byte, chunk.dataSize)
-		chunk.writeData(data)
-	} else {
-		mask = 0
-		data = []byte{}
-	}
-
-	p.conn.WritePacket(&outbound.ChunkData{
-		X:         chunkX,
-		Z:         chunkZ,
-		FullChunk: true,
-		Mask:      mask,
-		Data:      data,
-	})
-}
-
 func (p *Player) tick() {
 	p.conn.WritePacket(&outbound.KeepAlive{
 		ID: 0,
@@ -126,9 +103,18 @@ func (p *Player) updateChunks() {
 	// unload old chunks
 	for pos := range p.chunks {
 		if center.Dist(pos) > viewDist {
-			p.sendChunkData(pos.X, pos.Z, nil)
+			p.conn.WritePacket(&outbound.ChunkData{
+				X:         pos.X,
+				Z:         pos.Z,
+				FullChunk: true,
+				Mask:      0,
+			})
 			delete(p.chunks, pos)
 		}
+	}
+
+	pk := outbound.BulkChunkData{
+		SkyLightIncluded: true,
 	}
 
 	// load new chunks
@@ -141,9 +127,19 @@ func (p *Player) updateChunks() {
 
 			c := p.world.GetChunk(pos)
 			if c != nil {
-				p.sendChunkData(pos.X, pos.Z, c)
+				pk.ChunkCount++
+				pk.Meta = append(pk.Meta, outbound.BulkChunkDataMeta{
+					X:           x,
+					Z:           z,
+					SectionMask: c.sectionMask,
+				})
+				pk.Data = c.appendData(pk.Data)
 				p.chunks[pos] = c
 			}
 		}
+	}
+
+	if pk.ChunkCount > 0 {
+		p.conn.WritePacket(&pk)
 	}
 }

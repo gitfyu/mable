@@ -10,16 +10,20 @@ import (
 var DefaultWorld = createDefaultWorld()
 
 func createDefaultWorld() *World {
-	c := NewChunk()
-	for x := uint8(0); x < 16; x++ {
-		for z := uint8(0); z < 16; z++ {
-			for y := uint8(1); y < 100; y += 5 {
-				c.SetBlock(x, y, z, block.Stone.ToData())
+	chunks := make(map[ChunkPos]*Chunk)
+	for x := int32(-1); x <= 1; x++ {
+		for z := int32(-1); z <= 1; z++ {
+			c := NewChunk()
+			for dx := uint8(0); dx < 16; dx++ {
+				for dz := uint8(0); dz < 16; dz++ {
+					for dy := uint8(1); dy < 100; dy += 5 {
+						c.SetBlock(dx, dy, dz, block.Stone.ToData())
+					}
+				}
 			}
+
+			chunks[ChunkPos{x, z}] = c
 		}
 	}
-
-	return NewWorld(map[ChunkPos]*Chunk{
-		ChunkPos{0, 0}: c,
-	})
+	return NewWorld(chunks)
 }
