@@ -8,7 +8,8 @@ import (
 
 // Writer is used to write packets.
 type Writer struct {
-	writer io.Writer
+	writer    io.Writer
+	varIntBuf [protocol.VarIntMaxBytes]byte
 }
 
 // NewWriter constructs a new Writer.
@@ -19,11 +20,8 @@ func NewWriter(w io.Writer) *Writer {
 }
 
 func (w *Writer) writeVarInt(v int32) error {
-	n := protocol.VarIntSize(v)
-	b := make([]byte, n)
-	protocol.WriteVarInt(b, v)
-
-	if _, err := w.writer.Write(b); err != nil {
+	protocol.WriteVarInt(w.varIntBuf[:], v)
+	if _, err := w.writer.Write(w.varIntBuf[:protocol.VarIntSize(v)]); err != nil {
 		return err
 	}
 
