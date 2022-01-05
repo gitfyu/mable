@@ -143,10 +143,7 @@ func (c *Chunk) writeData(buf []byte) {
 		}
 	}
 
-	// light and biome data
-	copy(buf[off:],
-		cachedLightAndBiomeData[len(cachedLightAndBiomeData)-lightDataSize*c.sectionCount+biomeDataSize:],
-	)
+	copy(buf[off:], cachedLightAndBiomeData[(chunkSectionsPerChunk-c.sectionCount)*lightDataSize:])
 }
 
 // Subscribe registers the specified channel to receive updates for this Chunk. The specified ID must be unique to the
