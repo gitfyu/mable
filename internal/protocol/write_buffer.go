@@ -100,14 +100,13 @@ func (w *WriteBuffer) WriteBytes(b []byte) {
 }
 
 func (w *WriteBuffer) WriteString(str string) {
-	b := []byte(str)
-	w.WriteVarInt(int32(len(b)))
-	w.WriteBytes(b)
+	w.WriteVarInt(int32(len(str)))
+	w.data = append(w.data, str...)
 }
 
 func (w *WriteBuffer) WriteByteArrayWithLength(b []byte) {
 	w.WriteVarInt(int32(len(b)))
-	w.WriteBytes(b)
+	w.data = append(w.data, b...)
 }
 
 func (w *WriteBuffer) WriteChat(msg *chat.Msg) {
