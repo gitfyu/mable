@@ -91,16 +91,12 @@ type Chunk struct {
 	// sections contains all chunkSection instances for this Chunk. It is possible that not all indices contain a
 	// chunkSection, in which case they will be nil.
 	sections [chunkSectionsPerChunk]*chunkSection
-
-	// dataSize is the total size required for the buffer that should be passed to appendData.
-	dataSize int
 }
 
 // NewChunk constructs a new Chunk.
 func NewChunk() *Chunk {
 	return &Chunk{
 		listeners: make(map[uint32]chan<- interface{}),
-		dataSize:  biomeDataSize,
 	}
 }
 
@@ -127,7 +123,6 @@ func (c *Chunk) createSectionIfNotExists(index uint8) {
 	c.sectionCount++
 	c.sectionMask |= 1 << index
 	c.sections[index] = new(chunkSection)
-	c.dataSize += chunkSectionBlocksSize + lightDataSize
 }
 
 // appendData will append the data for this chunk to the buffer, to be sent in a packet. The appended buffer will be
