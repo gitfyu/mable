@@ -11,8 +11,8 @@ var DefaultWorld = createDefaultWorld()
 
 func createDefaultWorld() *World {
 	chunks := make(map[ChunkPos]*Chunk)
-	for x := int32(-1); x <= 1; x++ {
-		for z := int32(-1); z <= 1; z++ {
+	for x := int32(-2); x <= 2; x++ {
+		for z := int32(-2); z <= 2; z++ {
 			c := NewChunk()
 			for dx := uint8(0); dx < 16; dx++ {
 				for dz := uint8(0); dz < 16; dz++ {

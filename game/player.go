@@ -113,7 +113,7 @@ func (p *Player) updateChunks() {
 		}
 	}
 
-	pk := outbound.BulkChunkData{
+	pk := &outbound.BulkChunkData{
 		SkyLightIncluded: true,
 	}
 
@@ -135,11 +135,18 @@ func (p *Player) updateChunks() {
 				})
 				pk.Data = c.appendData(pk.Data)
 				p.chunks[pos] = c
+
+				if pk.ChunkCount == 10 {
+					p.conn.WritePacket(pk)
+					pk = &outbound.BulkChunkData{
+						SkyLightIncluded: true,
+					}
+				}
 			}
 		}
 	}
 
 	if pk.ChunkCount > 0 {
-		p.conn.WritePacket(&pk)
+		p.conn.WritePacket(pk)
 	}
 }
