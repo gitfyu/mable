@@ -35,6 +35,7 @@ var varIntInvalidTest = varIntTest{
 
 func Test_ReadVarInt(t *testing.T) {
 	for _, test := range varIntTests {
+		test := test
 		t.Run(fmt.Sprintf("%v", test), func(t *testing.T) {
 			r := bufio.NewReader(bytes.NewReader(test.bytes))
 			val, err := ReadVarInt(r)
@@ -59,6 +60,7 @@ func Test_ReadVarInt_Invalid(t *testing.T) {
 
 func Test_WriteVarInt(t *testing.T) {
 	for _, test := range varIntTests {
+		test := test
 		t.Run(fmt.Sprintf("%v", test), func(t *testing.T) {
 			buf := make([]byte, VarIntSize(test.val))
 			WriteVarInt(buf, test.val)
@@ -72,6 +74,7 @@ func Test_WriteVarInt(t *testing.T) {
 
 func Test_VarIntSize(t *testing.T) {
 	for _, test := range varIntTests {
+		test := test
 		t.Run(fmt.Sprintf("%v", test), func(t *testing.T) {
 			if VarIntSize(test.val) != len(test.bytes) {
 				t.Errorf("Expected %d, got %d", len(test.bytes), VarIntSize(test.val))
