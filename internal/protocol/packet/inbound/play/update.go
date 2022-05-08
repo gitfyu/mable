@@ -26,12 +26,27 @@ func init() {
 	})
 }
 
-func (p *Update) UnmarshalPacket(r *protocol.ReadBuffer) {
+func (p *Update) UnmarshalPacket(r protocol.Reader) error {
+	var err error
 	if p.HasPos {
-		p.X, p.Y, p.Z = r.ReadFloat64(), r.ReadFloat64(), r.ReadFloat64()
+		if p.X, err = protocol.ReadFloat64(r); err != nil {
+			return err
+		}
+		if p.Y, err = protocol.ReadFloat64(r); err != nil {
+			return err
+		}
+		if p.Z, err = protocol.ReadFloat64(r); err != nil {
+			return err
+		}
 	}
 	if p.HasLook {
-		p.Yaw, p.Pitch = r.ReadFloat32(), r.ReadFloat32()
+		if p.Yaw, err = protocol.ReadFloat32(r); err != nil {
+			return err
+		}
+		if p.Pitch, err = protocol.ReadFloat32(r); err != nil {
+			return err
+		}
 	}
-	p.OnGround = r.ReadBool()
+	p.OnGround, err = protocol.ReadBool(r)
+	return err
 }

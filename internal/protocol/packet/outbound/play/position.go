@@ -14,11 +14,21 @@ func (_ Position) PacketID() uint {
 	return 0x08
 }
 
-func (p *Position) MarshalPacket(w *protocol.WriteBuffer) {
-	w.WriteFloat64(p.X)
-	w.WriteFloat64(p.Y)
-	w.WriteFloat64(p.Z)
-	w.WriteFloat32(p.Yaw)
-	w.WriteFloat32(p.Pitch)
-	w.WriteUint8(p.Flags)
+func (p *Position) MarshalPacket(w protocol.Writer) error {
+	if err := protocol.WriteFloat64(w, p.X); err != nil {
+		return err
+	}
+	if err := protocol.WriteFloat64(w, p.Y); err != nil {
+		return err
+	}
+	if err := protocol.WriteFloat64(w, p.Z); err != nil {
+		return err
+	}
+	if err := protocol.WriteFloat32(w, p.Yaw); err != nil {
+		return err
+	}
+	if err := protocol.WriteFloat32(w, p.Pitch); err != nil {
+		return err
+	}
+	return w.WriteByte(p.Flags)
 }

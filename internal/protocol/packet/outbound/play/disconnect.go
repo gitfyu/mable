@@ -9,10 +9,10 @@ type Disconnect struct {
 	Reason *chat.Msg
 }
 
-func (_ Disconnect) PacketID() uint {
+func (Disconnect) PacketID() uint {
 	return 0x40
 }
 
-func (s *Disconnect) MarshalPacket(w *protocol.WriteBuffer) {
-	w.WriteChat(s.Reason)
+func (s *Disconnect) MarshalPacket(w protocol.Writer) error {
+	return protocol.WriteChat(w, s.Reason)
 }

@@ -8,10 +8,10 @@ type Response struct {
 	Content string
 }
 
-func (_ Response) PacketID() uint {
+func (Response) PacketID() uint {
 	return 0x00
 }
 
-func (r *Response) MarshalPacket(w *protocol.WriteBuffer) {
-	w.WriteString(r.Content)
+func (r *Response) MarshalPacket(w protocol.Writer) error {
+	return protocol.WriteString(w, r.Content)
 }

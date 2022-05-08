@@ -16,19 +16,30 @@ type BulkChunkData struct {
 	Data             []byte
 }
 
-func (_ BulkChunkData) PacketID() uint {
+func (BulkChunkData) PacketID() uint {
 	return 0x26
 }
 
-func (c *BulkChunkData) MarshalPacket(w *protocol.WriteBuffer) {
-	w.WriteBool(c.SkyLightIncluded)
-	w.WriteVarInt(c.ChunkCount)
-
-	for i := range c.Meta {
-		w.WriteUint32(uint32(c.Meta[i].X))
-		w.WriteUint32(uint32(c.Meta[i].Z))
-		w.WriteUint16(c.Meta[i].SectionMask)
+func (c *BulkChunkData) MarshalPacket(w protocol.Writer) error {
+	if err := protocol.WriteBool(w, c.SkyLightIncluded); err != nil {
+		return err
+	}
+	if err := protocol.WriteVarInt(w, c.ChunkCount); err != nil {
+		return err
 	}
 
-	w.WriteBytes(c.Data)
+	for i := range c.Meta {
+		if err := protocol.WriteUint32(w, uint32(c.Meta[i].X)); err != nil {
+			return err
+		}
+		if err := protocol.WriteUint32(w, uint32(c.Meta[i].Z)); err != nil {
+			return err
+		}
+		if err := protocol.WriteUint16(w, c.Meta[i].SectionMask); err != nil {
+			return err
+		}
+	}
+
+	_, err := w.Write(c.Data)
+	return err
 }

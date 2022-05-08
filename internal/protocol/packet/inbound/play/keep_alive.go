@@ -6,7 +6,7 @@ import (
 )
 
 type KeepAlive struct {
-	ID int
+	ID int32
 }
 
 func init() {
@@ -15,6 +15,8 @@ func init() {
 	})
 }
 
-func (k *KeepAlive) UnmarshalPacket(r *protocol.ReadBuffer) {
-	k.ID = r.ReadVarInt()
+func (k *KeepAlive) UnmarshalPacket(r protocol.Reader) error {
+	var err error
+	k.ID, err = protocol.ReadVarInt(r)
+	return err
 }

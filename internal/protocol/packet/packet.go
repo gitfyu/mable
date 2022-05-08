@@ -6,13 +6,13 @@ import (
 
 // Inbound represents a packet sent from the client.
 type Inbound interface {
-	UnmarshalPacket(r *protocol.ReadBuffer)
+	UnmarshalPacket(r protocol.Reader) error
 }
 
 // Outbound represents a packet sent from the server.
 type Outbound interface {
 	PacketID() uint
-	MarshalPacket(w *protocol.WriteBuffer)
+	MarshalPacket(w protocol.Writer) error
 }
 
 var idToPacket = make(map[uint]func() Inbound)

@@ -11,14 +11,22 @@ type ChunkData struct {
 	Data      []byte
 }
 
-func (_ ChunkData) PacketID() uint {
+func (ChunkData) PacketID() uint {
 	return 0x21
 }
 
-func (c *ChunkData) MarshalPacket(w *protocol.WriteBuffer) {
-	w.WriteUint32(uint32(c.X))
-	w.WriteUint32(uint32(c.Z))
-	w.WriteBool(c.FullChunk)
-	w.WriteUint16(c.Mask)
-	w.WriteByteArrayWithLength(c.Data)
+func (c *ChunkData) MarshalPacket(w protocol.Writer) error {
+	if err := protocol.WriteUint32(w, uint32(c.X)); err != nil {
+		return err
+	}
+	if err := protocol.WriteUint32(w, uint32(c.Z)); err != nil {
+		return err
+	}
+	if err := protocol.WriteBool(w, c.FullChunk); err != nil {
+		return err
+	}
+	if err := protocol.WriteUint16(w, c.Mask); err != nil {
+		return err
+	}
+	return protocol.WriteByteArray(w, c.Data)
 }

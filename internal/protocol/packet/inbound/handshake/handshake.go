@@ -6,10 +6,10 @@ import (
 )
 
 type Handshake struct {
-	ProtoVer  uint
+	ProtoVer  int32
 	Addr      string
 	Port      uint16
-	NextState protocol.State
+	NextState int32
 }
 
 func init() {
@@ -18,9 +18,18 @@ func init() {
 	})
 }
 
-func (h *Handshake) UnmarshalPacket(r *protocol.ReadBuffer) {
-	h.ProtoVer = uint(r.ReadVarInt())
-	h.Addr = r.ReadString()
-	h.Port = r.ReadUint16()
-	h.NextState = protocol.State(r.ReadVarInt())
+func (h *Handshake) UnmarshalPacket(r protocol.Reader) error {
+	var err error
+
+	if h.ProtoVer, err = protocol.ReadVarInt(r); err != nil {
+		return err
+	}
+	if h.Addr, err = protocol.ReadString(r); err != nil {
+		return err
+	}
+	if h.Port, err = protocol.ReadUint16(r); err != nil {
+		return err
+	}
+	h.NextState, err = protocol.ReadVarInt(r)
+	return err
 }

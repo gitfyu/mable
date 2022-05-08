@@ -10,11 +10,13 @@ type Success struct {
 	Username string
 }
 
-func (_ Success) PacketID() uint {
+func (Success) PacketID() uint {
 	return 0x02
 }
 
-func (s *Success) MarshalPacket(w *protocol.WriteBuffer) {
-	w.WriteString(s.UUID.String())
-	w.WriteString(s.Username)
+func (s *Success) MarshalPacket(w protocol.Writer) error {
+	if err := protocol.WriteString(w, s.UUID.String()); err != nil {
+		return err
+	}
+	return protocol.WriteString(w, s.Username)
 }

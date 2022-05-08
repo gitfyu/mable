@@ -15,6 +15,8 @@ func init() {
 	})
 }
 
-func (p *Ping) UnmarshalPacket(r *protocol.ReadBuffer) {
-	p.Time = int64(r.ReadUint64())
+func (p *Ping) UnmarshalPacket(r protocol.Reader) error {
+	t, err := protocol.ReadUint64(r)
+	p.Time = int64(t)
+	return err
 }

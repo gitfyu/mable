@@ -15,6 +15,8 @@ func init() {
 	})
 }
 
-func (s *Start) UnmarshalPacket(r *protocol.ReadBuffer) {
-	s.Username = r.ReadString()
+func (s *Start) UnmarshalPacket(r protocol.Reader) error {
+	var err error
+	s.Username, err = protocol.ReadString(r)
+	return err
 }

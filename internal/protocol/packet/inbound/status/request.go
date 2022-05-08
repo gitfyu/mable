@@ -14,5 +14,6 @@ func init() {
 	})
 }
 
-func (_ Request) UnmarshalPacket(_ *protocol.ReadBuffer) {
+func (Request) UnmarshalPacket(protocol.Reader) error {
+	return nil
 }
