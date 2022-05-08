@@ -62,11 +62,11 @@ func Test_WriteVarInt(t *testing.T) {
 	for _, test := range varIntTests {
 		test := test
 		t.Run(fmt.Sprintf("%v", test), func(t *testing.T) {
-			buf := make([]byte, VarIntSize(test.val))
-			WriteVarInt(buf, test.val)
+			var buf bytes.Buffer
+			WriteVarInt(&buf, test.val)
 
-			if !bytes.Equal(test.bytes, buf) {
-				t.Errorf("Expected %d, got %d", test.bytes, buf)
+			if !bytes.Equal(test.bytes, buf.Bytes()) {
+				t.Errorf("Expected %d, got %d", test.bytes, buf.Bytes())
 			}
 		})
 	}

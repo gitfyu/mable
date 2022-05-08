@@ -2,9 +2,10 @@ package protocol
 
 import (
 	"encoding/json"
-	"github.com/gitfyu/mable/chat"
 	"math"
 	"sync"
+
+	"github.com/gitfyu/mable/chat"
 )
 
 const (
@@ -40,6 +41,12 @@ func ReleaseWriteBuffer(w *WriteBuffer) {
 // Reset resets the buffers contents.
 func (w *WriteBuffer) Reset() {
 	w.data = w.data[:0]
+}
+
+// WriteByte writes a single byte to the buffer. It always returns nil.
+func (w *WriteBuffer) WriteByte(c byte) error {
+	w.data = append(w.data, c)
+	return nil
 }
 
 func (w *WriteBuffer) WriteBool(v bool) {
@@ -83,8 +90,7 @@ func (w *WriteBuffer) WriteUint64(v uint64) {
 }
 
 func (w *WriteBuffer) WriteVarInt(v int32) {
-	WriteVarInt(w.varIntBuf[:], v)
-	w.data = append(w.data, w.varIntBuf[:VarIntSize(v)]...)
+	WriteVarInt(w, v)
 }
 
 func (w *WriteBuffer) WriteFloat32(v float32) {

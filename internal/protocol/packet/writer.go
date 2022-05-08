@@ -1,15 +1,17 @@
 package packet
 
 import (
+	"bytes"
 	"fmt"
-	"github.com/gitfyu/mable/internal/protocol"
 	"io"
+
+	"github.com/gitfyu/mable/internal/protocol"
 )
 
 // Writer is used to write packets.
 type Writer struct {
 	writer    io.Writer
-	varIntBuf [protocol.VarIntMaxBytes]byte
+	varIntBuf bytes.Buffer
 }
 
 // NewWriter constructs a new Writer.
@@ -20,8 +22,9 @@ func NewWriter(w io.Writer) *Writer {
 }
 
 func (w *Writer) writeVarInt(v int32) error {
-	protocol.WriteVarInt(w.varIntBuf[:], v)
-	if _, err := w.writer.Write(w.varIntBuf[:protocol.VarIntSize(v)]); err != nil {
+	w.varIntBuf.Reset()
+	protocol.WriteVarInt(&w.varIntBuf, v)
+	if _, err := w.writer.Write(w.varIntBuf.Bytes()); err != nil {
 		return err
 	}
 

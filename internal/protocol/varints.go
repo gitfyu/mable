@@ -6,16 +6,19 @@ import (
 	"math/bits"
 )
 
+// https://wiki.vg/VarInt_And_VarLong
+
 const (
+	// VarIntMaxBytes is the maximum number of bytes required to represent a single VarInt.
 	VarIntMaxBytes = 5
+
+	segmentBits = 0x7F
+	continueBit = 0x80
 )
 
 var (
 	errVarIntTooBig = errors.New("VarInt too big")
 )
-
-// Implementation is based on https://wiki.vg/Protocol#VarInt_and_VarLong and
-// https://github.com/Tnze/go-mc/blob/master/net/packet/types.go
 
 // VarIntSize returns the number of bytes required to write the given value as a VarInt.
 func VarIntSize(v int32) int {
@@ -24,8 +27,7 @@ func VarIntSize(v int32) int {
 
 // ReadVarInt reads a single VarInt from an io.ByteReader.
 func ReadVarInt(r io.ByteReader) (int32, error) {
-	var v uint32
-	var n int
+	var v, pos int32
 
 	for {
 		b, err := r.ReadByte()
@@ -33,34 +35,32 @@ func ReadVarInt(r io.ByteReader) (int32, error) {
 			return 0, err
 		}
 
-		v |= uint32(b&0x7F) << (n * 7)
-		n++
-		if n > VarIntMaxBytes {
-			return 0, errVarIntTooBig
+		v |= int32(b&segmentBits) << pos
+		if b&continueBit == 0 {
+			break
 		}
 
-		if (b & 0x80) == 0 {
-			break
+		pos += 7
+		if pos >= 32 {
+			return 0, errVarIntTooBig
 		}
 	}
 
-	return int32(v), nil
+	return v, nil
 }
 
-// WriteVarInt writes a VarInt to a byte slice. If the slice is too small, this function will panic. You can check the
-// required size using VarIntSize.
-func WriteVarInt(buf []byte, v int32) {
-	uv := uint32(v)
-	for i := 0; ; i++ {
-		b := uv & 0x7F
-		uv >>= 7
-		if uv != 0 {
-			b |= 0x80
+// WriteVarInt writes a single VarInt to io.ByteWriter.
+func WriteVarInt(w io.ByteWriter, v int32) error {
+	for {
+		if v&(^segmentBits) == 0 {
+			return w.WriteByte(byte(v))
 		}
 
-		buf[i] = byte(b)
-		if uv == 0 {
-			return
+		err := w.WriteByte(byte(v&segmentBits) | continueBit)
+		if err != nil {
+			return err
 		}
+
+		v = int32(uint32(v) >> 7)
 	}
 }
