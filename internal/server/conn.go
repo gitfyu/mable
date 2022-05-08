@@ -10,6 +10,7 @@ import (
 	"github.com/gitfyu/mable/internal/protocol"
 	"github.com/gitfyu/mable/internal/protocol/packet"
 	"github.com/gitfyu/mable/internal/protocol/packet/outbound/login"
+	"github.com/gitfyu/mable/internal/protocol/packet/outbound/play"
 )
 
 // conn represents a client connection.
@@ -145,7 +146,7 @@ func (c *conn) Disconnect(reason *chat.Msg) {
 
 	switch c.state {
 	case protocol.StatePlay:
-		c.WritePacket(&login.Disconnect{
+		c.WritePacket(&play.Disconnect{
 			Reason: reason,
 		})
 	case protocol.StateLogin:
