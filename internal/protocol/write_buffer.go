@@ -15,8 +15,7 @@ const (
 // WriteBuffer is a utility for writing data types commonly used in packets. Afterwards, its contents can be converted
 // to a byte slice using WriteBuffer.Bytes.
 type WriteBuffer struct {
-	data      []byte
-	varIntBuf [VarIntMaxBytes]byte
+	data []byte
 }
 
 var writeBufPool = sync.Pool{
