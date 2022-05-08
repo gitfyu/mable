@@ -2,7 +2,6 @@ package packet
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 
 	"github.com/gitfyu/mable/internal/protocol"
@@ -10,43 +9,36 @@ import (
 
 // Writer is used to write packets.
 type Writer struct {
-	writer    io.Writer
-	varIntBuf bytes.Buffer
+	out io.Writer
+	buf bytes.Buffer
 }
 
 // NewWriter constructs a new Writer.
 func NewWriter(w io.Writer) *Writer {
 	return &Writer{
-		writer: w,
+		out: w,
 	}
 }
 
-func (w *Writer) writeVarInt(v int32) error {
-	w.varIntBuf.Reset()
-	protocol.WriteVarInt(&w.varIntBuf, v)
-	if _, err := w.writer.Write(w.varIntBuf.Bytes()); err != nil {
-		return err
-	}
+// WritePacket adds a single packet to the internal buffer, which will be written the next
+// time that Flush is called.
+func (w *Writer) WritePacket(pk Outbound) {
+	data := protocol.AcquireWriteBuffer()
+	defer protocol.ReleaseWriteBuffer(data)
 
-	return nil
+	data.Reset()
+	data.WriteVarInt(int32(pk.PacketID()))
+	pk.MarshalPacket(data)
+
+	// Write length
+	protocol.WriteVarInt(&w.buf, int32(data.Len()))
+	// Write ID + data
+	w.buf.Write(data.Bytes())
 }
 
-// WritePacket writes a single packet, including its length and id.
-func (w *Writer) WritePacket(pk Outbound) error {
-	buf := protocol.AcquireWriteBuffer()
-	defer protocol.ReleaseWriteBuffer(buf)
-
-	buf.Reset()
-	buf.WriteVarInt(int32(pk.PacketID()))
-	pk.MarshalPacket(buf)
-
-	if err := w.writeVarInt(int32(buf.Len())); err != nil {
-		return fmt.Errorf("writing packet size: %w", err)
-	}
-
-	if _, err := w.writer.Write(buf.Bytes()); err != nil {
-		return fmt.Errorf("writing packet body: %w", err)
-	}
-
-	return nil
+// Writes the internal buffer to the io.Writer that was used to construct this Writer.
+func (w *Writer) Flush() error {
+	_, err := w.out.Write(w.buf.Bytes())
+	w.buf.Reset()
+	return err
 }

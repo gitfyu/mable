@@ -2,13 +2,14 @@ package server
 
 import (
 	"errors"
+	"net"
+	"sync/atomic"
+	"time"
+
 	"github.com/gitfyu/mable/chat"
 	"github.com/gitfyu/mable/internal/protocol"
 	"github.com/gitfyu/mable/internal/protocol/packet"
 	"github.com/gitfyu/mable/internal/protocol/packet/outbound/login"
-	"net"
-	"sync/atomic"
-	"time"
 )
 
 // conn represents a client connection.
@@ -46,7 +47,10 @@ func (c *conn) dispatchPackets() {
 			break
 		}
 
-		if err = c.writer.WritePacket(p); err != nil {
+		c.writer.WritePacket(p)
+
+		// TODO in the future, as an optimization flushing should probs not be done for every packet
+		if err = c.writer.Flush(); err != nil {
 			break
 		}
 	}
