@@ -3,21 +3,33 @@ package main
 
 import (
 	"errors"
-	"github.com/gitfyu/mable/internal/config"
-	"github.com/gitfyu/mable/internal/server"
-	"github.com/gitfyu/mable/log"
+	"flag"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/gitfyu/mable/internal/server"
+	"github.com/gitfyu/mable/log"
 )
 
-var logger = log.Logger{
-	Name: "MAIN",
+var (
+	srvConf server.Config
+	logger  = log.Logger{
+		Name: "MAIN",
+	}
+)
+
+func init() {
+	flag.StringVar(&srvConf.Addr, "srv-bind", ":25565", "address to bind to, such as :25565 or 123.123.123.123:123")
+	flag.IntVar(&srvConf.MaxPacketSize, "srv-max-packet-size", 1<<16, "Maximum size of a single packet, in bytes")
+	flag.IntVar(&srvConf.Timeout, "srv-timeout", 20, "Time in seconds after which idle clients are kicked")
+	flag.StringVar(&srvConf.LogLevel, "srv-log-level", "info", "The server will print debug logs")
+	flag.Parse()
 }
 
 func main() {
-	srv, err := server.NewServer(config.Srv)
+	srv, err := server.NewServer(srvConf)
 
 	if err != nil {
 		logger.Error("Failed to start").Err(err).Log()
