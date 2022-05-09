@@ -1,9 +1,11 @@
 package server
 
 import (
-	"github.com/gitfyu/mable/log"
 	"net"
 	"runtime/debug"
+
+	"github.com/gitfyu/mable/game"
+	"github.com/gitfyu/mable/log"
 )
 
 // Config is used to configure a Server.
@@ -18,9 +20,10 @@ type Server struct {
 	cfg      Config
 	listener net.Listener
 	logger   log.Logger
+	game     *game.Game
 }
 
-func NewServer(cfg Config) (*Server, error) {
+func NewServer(cfg Config, g *game.Game) (*Server, error) {
 	l, err := net.Listen("tcp", cfg.Addr)
 	if err != nil {
 		return nil, err
@@ -33,6 +36,7 @@ func NewServer(cfg Config) (*Server, error) {
 			Name:     "SERVER",
 			MinLevel: log.LevelFromString(cfg.LogLevel),
 		},
+		game: g,
 	}, nil
 }
 

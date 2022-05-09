@@ -5,22 +5,14 @@ import (
 	inbound "github.com/gitfyu/mable/internal/protocol/packet/inbound/play"
 )
 
-// HandlePacket processes a packet sent by the player. This function should only be used by the server itself.
+// HandlePacket processes a packet sent by the player.
+// This function should only be used by the server itself.
 func (p *Player) HandlePacket(pk packet.Inbound) {
-	p.packetLock.Lock()
-	defer p.packetLock.Unlock()
-
-	p.world.Schedule(func() {
-		p.handlePacket(pk)
-	})
-}
-
-func (p *Player) handlePacket(pk packet.Inbound) {
-	switch pk.(type) {
+	switch pk := pk.(type) {
 	case *inbound.KeepAlive:
-		p.handleKeepAlive(pk.(*inbound.KeepAlive))
+		p.handleKeepAlive(pk)
 	case *inbound.Update:
-		p.handleUpdate(pk.(*inbound.Update))
+		p.handleUpdate(pk)
 	}
 }
 

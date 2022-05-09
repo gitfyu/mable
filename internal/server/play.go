@@ -8,22 +8,29 @@ import (
 
 // handlePlay creates the player and handles all packets until the connection is closed.
 func handlePlay(c *conn, username string, id uuid.UUID) error {
-	p := game.NewPlayer(username, id, c, game.DefaultWorld)
-	defer p.Close()
+	g := c.serv.game
+	p := game.NewPlayer(username, id, c)
 
-	c.WritePacket(&play.JoinGame{
-		EntityID:      int(p.EntityID()),
-		Gamemode:      1,
-		Dimension:     0,
-		Difficulty:    1,
-		MaxPlayers:    0,
-		LevelType:     "flat",
-		ReduceDbgInfo: false,
+	defer g.Schedule(func() {
+		p.Close()
 	})
-	p.Teleport(game.Pos{
-		X: 8,
-		Y: 16,
-		Z: 8,
+
+	g.Schedule(func() {
+		p.SetWorld(g.DefaultWorld())
+		c.WritePacket(&play.JoinGame{
+			EntityID:      int(p.EntityID()),
+			Gamemode:      1,
+			Dimension:     0,
+			Difficulty:    1,
+			MaxPlayers:    0,
+			LevelType:     "flat",
+			ReduceDbgInfo: false,
+		})
+		p.Teleport(game.Pos{
+			X: 8,
+			Y: 16,
+			Z: 8,
+		})
 	})
 
 	for c.IsOpen() {
@@ -32,7 +39,9 @@ func handlePlay(c *conn, username string, id uuid.UUID) error {
 			return err
 		}
 
-		p.HandlePacket(pk)
+		g.Schedule(func() {
+			p.HandlePacket(pk)
+		})
 	}
 
 	return nil

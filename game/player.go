@@ -5,7 +5,6 @@ import (
 	"github.com/gitfyu/mable/internal/protocol/packet"
 	outbound "github.com/gitfyu/mable/internal/protocol/packet/outbound/play"
 	"github.com/google/uuid"
-	"sync"
 )
 
 const PlayerEyeHeight = 1.62
@@ -20,30 +19,25 @@ type PlayerConn interface {
 
 // Player represents a player entity.
 type Player struct {
-	id    ID
-	name  string
-	uid   uuid.UUID
-	conn  PlayerConn
-	world *World
-	// packetLock currently guards world, but only in the HandlePacket and SetWorld functions. All other functions that
-	// access world should be called from the World.handle goroutine of the current world.
-	packetLock sync.Mutex
-	pos        Pos
-	chunks     map[ChunkPos]*Chunk
+	id     ID
+	name   string
+	uid    uuid.UUID
+	conn   PlayerConn
+	world  *World
+	pos    Pos
+	chunks map[ChunkPos]*Chunk
 }
 
-// NewPlayer constructs a new player and adds them to the specified World.
-func NewPlayer(name string, uid uuid.UUID, conn PlayerConn, w *World) *Player {
-	p := &Player{
+// NewPlayer constructs a new Player.
+// The created Player will not be associated with any World yet.
+func NewPlayer(name string, uid uuid.UUID, conn PlayerConn) *Player {
+	return &Player{
 		id:     newEntityID(),
 		name:   name,
 		uid:    uid,
 		conn:   conn,
-		world:  w,
 		chunks: make(map[ChunkPos]*Chunk),
 	}
-	w.AddEntity(p)
-	return p
 }
 
 // EntityID implements Entity.EntityID.
@@ -51,20 +45,14 @@ func (p *Player) EntityID() ID {
 	return p.id
 }
 
-// Close releases resources associated with the Player. This function should only be called once and will always return
-// nil.
+// Close releases resources associated with the Player.
 func (p *Player) Close() error {
-	p.world.Schedule(func() {
-		p.SetWorld(nil)
-	})
+	p.SetWorld(nil)
 	return nil
 }
 
 // SetWorld moves the player to a different World.
 func (p *Player) SetWorld(w *World) {
-	p.packetLock.Lock()
-	defer p.packetLock.Unlock()
-
 	if p.world != nil {
 		p.world.RemoveEntity(p.id)
 	}
