@@ -11,11 +11,13 @@ import (
 	"github.com/gitfyu/mable/internal/protocol/packet"
 	"github.com/gitfyu/mable/internal/protocol/packet/outbound/login"
 	"github.com/gitfyu/mable/internal/protocol/packet/outbound/play"
+	"github.com/gitfyu/mable/log"
 )
 
 // conn represents a client connection.
 type conn struct {
 	serv       *Server
+	logger     log.Logger
 	conn       net.Conn
 	state      protocol.State
 	reader     *packet.Reader
@@ -27,7 +29,11 @@ type conn struct {
 
 func newConn(s *Server, c net.Conn) *conn {
 	return &conn{
-		serv:  s,
+		serv: s,
+		logger: log.Logger{
+			Name:     "CLIENT " + c.RemoteAddr().String(),
+			MinLevel: s.logger.MinLevel,
+		},
 		conn:  c,
 		state: protocol.StateHandshake,
 		reader: packet.NewReader(c, packet.ReaderConfig{
@@ -59,7 +65,7 @@ func (c *conn) dispatchPackets() {
 	close(c.flushed)
 
 	if err != nil {
-		c.serv.logger.Debug("Failed to dispatch packet(s)").Err(err).Log()
+		c.logger.Debug("Failed to dispatch packet(s)").Err(err).Log()
 		c.Close()
 	}
 }
@@ -87,15 +93,14 @@ func (c *conn) handle() error {
 			return err
 		}
 
-		c.serv.logger.Info("Player logged in").
-			Str("name", username).
+		c.logger.Name = "PLAYER " + username
+		c.logger.Info("Logged in").
 			Stringer("id", id).
 			Log()
 
 		c.state = protocol.StatePlay
 		defer func() {
-			c.serv.logger.Info("Player disconnected").
-				Str("name", username).
+			c.logger.Info("Disconnected").
 				Stringer("id", id).
 				Log()
 		}()
@@ -140,7 +145,7 @@ func (c *conn) WritePacket(pk packet.Outbound) {
 
 // Disconnect kicks the player with a specified reason.
 func (c *conn) Disconnect(reason *chat.Msg) {
-	c.serv.logger.Debug("Disconnecting").
+	c.logger.Debug("Disconnecting").
 		Stringer("reason", reason).
 		Log()
 

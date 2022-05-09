@@ -51,7 +51,7 @@ func init() {
 	flag.StringVar(&srvConf.Addr, "srv-bind", ":25565", "address to bind to, such as :25565 or 123.123.123.123:123")
 	flag.IntVar(&srvConf.MaxPacketSize, "srv-max-packet-size", 1<<16, "Maximum size of a single packet, in bytes")
 	flag.IntVar(&srvConf.Timeout, "srv-timeout", 20, "Time in seconds after which idle clients are kicked")
-	flag.StringVar(&srvConf.LogLevel, "srv-log-level", "info", "The server will print debug logs")
+	flag.StringVar(&srvConf.LogLevel, "srv-log-level", "debug", "The minimum level that will be logged")
 
 	// Game config
 	flag.IntVar(&gameConf.MaxJobs, "game-max-jobs", 100, "Maximum number of pending jobs")
